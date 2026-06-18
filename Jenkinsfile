@@ -25,20 +25,19 @@ pipeline {
         }
 
         stage('Deploy Container') {
-            steps {
-                echo "Deploying container..."
-                script {
-                    // 1. Stop and remove the old container if it's already running
-                    try {
-                        sh "docker stop ${CONTAINER_NAME}"
-                        sh "docker rm ${CONTAINER_NAME}"
-                    } catch (Exception e) {
-                        echo "No existing container found to stop. Proceeding to fresh deployment."
-                    }
-                    
-                    // 2. Run the new container in detached mode (-d)
-                    // It connects to the host network so it can communicate directly with Qdrant on port 6333
-                    sh "docker run -d --name ${CONTAINER_NAME} -p ${PORT_MAPPING} ${IMAGE_NAME}:latest"
+        steps {
+            echo "Deploying container..."
+            script {
+                try {
+                    sh "docker stop ${CONTAINER_NAME}"
+                    sh "docker rm ${CONTAINER_NAME}"
+                } catch (Exception e) {
+                    echo "No existing container found to stop. Proceeding to fresh deployment."
+                }
+
+                withCredentials([file(credentialsId: 'app-env-file', variable: 'ENV_FILE')]) {
+                    sh "docker run -d --name ${CONTAINER_NAME} --network jenkins-docker_default --env-file ${ENV_FILE} -p ${PORT_MAPPING} ${IMAGE_NAME}:latest"
+                }
                 }
             }
         }
