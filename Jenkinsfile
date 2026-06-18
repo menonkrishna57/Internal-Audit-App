@@ -43,29 +43,39 @@ pipeline {
 
         stage('Deploy to Azure Container Apps (ACA)') {
             steps {
-                // We bind BOTH your ACR login credentials AND your local Jenkins .env file secret
                 withCredentials([
                     usernamePassword(credentialsId: 'container-registry', usernameVariable: 'ACR_USER', passwordVariable: 'ACR_PASS'),
                     file(credentialsId: 'app-env-file', variable: 'ENV_FILE')
                 ]) {
                     script {
-                        // 1. This script reads your Jenkins secret file, strips newlines, 
-                        // and formats it into a single clean line: KEY1=VAL1 KEY2=VAL2
-                        def parsedEnvVars = sh(script: "cat ${ENV_FILE} | xargs | tr '\\n' ' '", returnStdout: true).trim()
-                        
                         echo "Deploying to ACA and updating environment configurations dynamically..."
                         
-                        // 2. We pass that variable string straight into the --set-env-vars flag
-                        sh """
+                        // Fix line-breaks safely by replacing newlines with spaces and cleaning spaces
+                        def parsedEnvVars = sh(
+                            script: "cat \${ENV_FILE} | tr '\\n' ' ' | tr '\\r' ' ' | xargs", 
+                            returnStdout: true
+                        ).trim()
+                        
+                        // Store the environment string safely into a temporary variable script context
+                        env.PARSED_ENV_VARS = parsedEnvVars
+
+                        // Use single quotes (') to allow shell variable mapping, preventing Groovy injection leaks
+                        sh '''
+                        # 1. Set the private registry credentials registry target context first
+                        az containerapp registry set \
+                          --name "${ACA_APP_NAME}" \
+                          --resource-group "${RESOURCE_GROUP}" \
+                          --server "${ACR_REGISTRY}" \
+                          --username "${ACR_USER}" \
+                          --password "${ACR_PASS}"
+
+                        # 2. Update the application image and its environmental container states
                         az containerapp update \
-                        --name ${ACA_APP_NAME} \
-                        --resource-group ${RESOURCE_GROUP} \
-                        --image ${ACR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} \
-                        --registry-server ${ACR_REGISTRY} \
-                        --registry-username ${ACR_USER} \
-                        --registry-password ${ACR_PASS} \
-                        --set-env-vars ${parsedEnvVars}
-                        """
+                          --name "${ACA_APP_NAME}" \
+                          --resource-group "${RESOURCE_GROUP}" \
+                          --image "${ACR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}" \
+                          --set-env-vars ${PARSED_ENV_VARS}
+                        '''
                     }
                 }
             }
