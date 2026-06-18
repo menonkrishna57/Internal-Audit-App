@@ -31,7 +31,7 @@ pipeline {
         stage('Push to Azure Container Registry (ACR)') {
             steps {
                 // Securely logs into your ACR using your stored Jenkins credentials
-                withCredentials([usernamePassword(credentialsId: 'azure-acr-credentials', usernameVariable: 'ACR_USER', passwordVariable: 'ACR_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'container-registry', usernameVariable: 'ACR_USER', passwordVariable: 'ACR_PASS')]) {
                     echo "Logging into Azure Container Registry..."
                     sh "docker login ${ACR_REGISTRY} -u ${ACR_USER} -p ${ACR_PASS}"
                     
