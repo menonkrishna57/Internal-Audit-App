@@ -44,7 +44,7 @@ pipeline {
         stage('Deploy to Azure Container Apps (ACA)') {
             steps {
                 withCredentials([
-                    usernamePassword(credentialsId: 'azure-acr-credentials', usernameVariable: 'ACR_USER', passwordVariable: 'ACR_PASS'),
+                    usernamePassword(credentialsId: 'container-registry', usernameVariable: 'ACR_USER', passwordVariable: 'ACR_PASS'),
                     usernamePassword(credentialsId: 'azure-sp-credentials', usernameVariable: 'AZURE_CLIENT_ID', passwordVariable: 'AZURE_CLIENT_SECRET'),
                     file(credentialsId: 'app-env-file', variable: 'ENV_FILE')
                 ]) {
