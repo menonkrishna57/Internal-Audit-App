@@ -60,7 +60,7 @@ pipeline {
                         env.PARSED_ENV_VARS = parsedEnvVars
                         
                         // Define your Azure Tenant ID here
-                        env.AZURE_TENANT_ID = "27c62613-4d10-47aa-bb1f-4e00a75c6a37" // <== Paste your actual tenantId from the JSON block
+                        env.AZURE_TENANT_ID = "27c62613-4d10-47aa-bb1f-4e00a75c6a37" 
 
                         sh '''
                         # 1. Authenticate Azure CLI using the Service Principal
@@ -79,11 +79,6 @@ pipeline {
 
                         # 3. Update the container app deployment with the new image and env vars
                         az containerapp update \
-                          --name "${ACA_APP_NAME}" \
-                          --resource-group "${RESOURCE_GROUP}" \
-                          --image "${ACR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}" \
-                          --set-env-vars ${PARSED_ENV_VARS}
-                        '''
                           --name "${ACA_APP_NAME}" \
                           --resource-group "${RESOURCE_GROUP}" \
                           --image "${ACR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}" \
