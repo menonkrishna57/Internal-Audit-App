@@ -43,29 +43,47 @@ pipeline {
 
         stage('Deploy to Azure Container Apps (ACA)') {
             steps {
-                // We bind BOTH your ACR login credentials AND your local Jenkins .env file secret
                 withCredentials([
-                    usernamePassword(credentialsId: 'container-registry', usernameVariable: 'ACR_USER', passwordVariable: 'ACR_PASS'),
+                    usernamePassword(credentialsId: 'azure-acr-credentials', usernameVariable: 'ACR_USER', passwordVariable: 'ACR_PASS'),
+                    usernamePassword(credentialsId: 'azure-sp-credentials', usernameVariable: 'AZURE_CLIENT_ID', passwordVariable: 'AZURE_CLIENT_SECRET'),
                     file(credentialsId: 'app-env-file', variable: 'ENV_FILE')
                 ]) {
                     script {
-                        // 1. This script reads your Jenkins secret file, strips newlines, 
-                        // and formats it into a single clean line: KEY1=VAL1 KEY2=VAL2
-                        def parsedEnvVars = sh(script: "cat ${ENV_FILE} | xargs | tr '\\n' ' '", returnStdout: true).trim()
+                        echo "Authenticating with Azure and deploying dynamically..."
                         
-                        echo "Deploying to ACA and updating environment configurations dynamically..."
+                        // Clean up the environment file variables into a flat string
+                        def parsedEnvVars = sh(
+                            script: "cat \${ENV_FILE} | tr '\\n' ' ' | tr '\\r' ' ' | xargs", 
+                            returnStdout: true
+                        ).trim()
                         
-                        // 2. We pass that variable string straight into the --set-env-vars flag
-                        sh """
+                        env.PARSED_ENV_VARS = parsedEnvVars
+                        
+                        // Define your Azure Tenant ID here
+                        env.AZURE_TENANT_ID = "27c62613-4d10-47aa-bb1f-4e00a75c6a37" // <== Paste your actual tenantId from the JSON block
+
+                        sh '''
+                        # 1. Authenticate Azure CLI using the Service Principal
+                        az login --service-principal \
+                          -u "${AZURE_CLIENT_ID}" \
+                          -p "${AZURE_CLIENT_SECRET}" \
+                          --tenant "${AZURE_TENANT_ID}"
+
+                        # 2. Link your private ACR registry to the Container App
+                        az containerapp registry set \
+                          --name "${ACA_APP_NAME}" \
+                          --resource-group "${RESOURCE_GROUP}" \
+                          --server "${ACR_REGISTRY}" \
+                          --username "${ACR_USER}" \
+                          --password "${ACR_PASS}"
+
+                        # 3. Update the container app deployment with the new image and env vars
                         az containerapp update \
-                        --name ${ACA_APP_NAME} \
-                        --resource-group ${RESOURCE_GROUP} \
-                        --image ${ACR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} \
-                        --registry-server ${ACR_REGISTRY} \
-                        --registry-username ${ACR_USER} \
-                        --registry-password ${ACR_PASS} \
-                        --set-env-vars ${parsedEnvVars}
-                        """
+                          --name "${ACA_APP_NAME}" \
+                          --resource-group "${RESOURCE_GROUP}" \
+                          --image "${ACR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}" \
+                          --set-env-vars ${PARSED_ENV_VARS}
+                        '''
                     }
                 }
             }
