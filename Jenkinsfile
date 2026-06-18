@@ -84,6 +84,11 @@ pipeline {
                           --image "${ACR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}" \
                           --set-env-vars ${PARSED_ENV_VARS}
                         '''
+                          --name "${ACA_APP_NAME}" \
+                          --resource-group "${RESOURCE_GROUP}" \
+                          --image "${ACR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}" \
+                          --set-env-vars ${PARSED_ENV_VARS}
+                        '''
                     }
                 }
             }
