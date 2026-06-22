@@ -1,5 +1,6 @@
 import logging
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.routes import audits
 
 # Set up basic logging
@@ -13,6 +14,15 @@ app = FastAPI(
     title="Bank Operational Audit Tool",
     description="Backend service that runs automated audit rules against internal databases and generates narrated compliance reports.",
     version="0.1.0"
+)
+
+# Allow the Vite dev server to call the API without CORS errors
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Register routes

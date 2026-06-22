@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global shell ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  background-color: #14202B;
+  color: #DCD3B8;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #14202B; }
+::-webkit-scrollbar-thumb { background: #1E2C3A; border-radius: 3px; }
+
+/* ── Focus ring (brass color, all interactive elements) ───── */
+:focus-visible {
+  outline: 2px solid #B08F4F;
+  outline-offset: 2px;
+}
+
+/* ── Nav rail ─────────────────────────────────────────────── */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-left: 3px solid transparent;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #8fa3b8;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  text-decoration: none;
+  user-select: none;
+}
+.nav-item:hover { color: #DCD3B8; }
+.nav-item.active {
+  color: #B08F4F;
+  border-left-color: #B08F4F;
+  background: transparent;
+}
+
+/* ── Severity stamp ───────────────────────────────────────── */
+.stamp {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  transform: rotate(-7deg);
+  transform-origin: center;
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 10px 4px;
+  /* Irregular inked border via SVG clip + box-shadow stack */
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  /* Slightly distressed look */
+  box-shadow: 1px 1px 0 0 currentColor, -0.5px -0.5px 0 0.5px currentColor;
+  filter: url(#ink-roughen);
+}
+.stamp-critical, .stamp-high { color: #A23B2C; }
+.stamp-medium, .stamp-low    { color: #B08F4F; }
+
+/* ── Tally underline ──────────────────────────────────────── */
+.tally-rule {
+  display: block;
+  width: 100%;
+  height: 1.5px;
+  background: #211C16;
+  margin-top: 4px;
+  /* Slightly hand-drawn: roughen via clip */
+  border-radius: 0;
+}
+
+/* ── Code block inside card ───────────────────────────────── */
+.code-block {
+  background: #0f1a23;
+  border: 1px solid #1E2C3A;
+  border-radius: 4px;
+  padding: 12px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: #c5d3dc;
+  white-space: pre;
+}
+
+/* ── Run Audit press/stamp animation ─────────────────────── */
+@keyframes btn-press {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+.btn-press { animation: btn-press 120ms ease-out forwards; }
+
+/* ── Card stamp-land animation ────────────────────────────── */
+@keyframes stamp-land {
+  0%   { opacity: 0; transform: scale(1.04) rotate(1deg); }
+  60%  { opacity: 1; transform: scale(0.99) rotate(0deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.stamp-land { animation: stamp-land 220ms cubic-bezier(.22,.68,0,1.2) both; }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .stamp-land { animation: none; opacity: 1; }
+  .btn-press  { animation: none; }
+}
+
+/* ── Raw rows table ───────────────────────────────────────── */
+.raw-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #211C16;
+}
+.raw-table th {
+  text-align: left;
+  padding: 5px 10px;
+  background: #c9bf9e;
+  border-bottom: 1px solid #b8ad8c;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.raw-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid #c9bf9e;
+  vertical-align: top;
+  word-break: break-all;
+}
+.raw-table tr:last-child td { border-bottom: none; }
+
+/* ── Mobile bottom nav ────────────────────────────────────── */
+@media (max-width: 767px) {
+  .nav-rail   { display: none !important; }
+  .bottom-nav { display: flex !important; }
+  .main-area  { padding-bottom: 64px; }
+}
+@media (min-width: 768px) {
+  .bottom-nav { display: none !important; }
+}
