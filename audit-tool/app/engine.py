@@ -93,6 +93,7 @@ def build_sql_query(rule: dict) -> str:
             window_minutes=rule.get("window_minutes", 30),
             bytes_threshold=rule.get("bytes_threshold", 1073741824)
         )
+        logger.debug("Formatted query: "+formatted_query)
         return formatted_query
     except Exception as e:
         logger.error(f"Failed formatting query template for rule {rule_id}: {str(e)}")
@@ -115,8 +116,10 @@ def execute_rule(rule: dict, connection: Connection) -> dict:
     try:
         result = connection.execute(text(sql_to_run))
         # Convert rows to dictionaries
+        logger.info(sql_to_run)
         for row in result:
             findings.append(dict(row._mapping))
+            logger.info("Result: "+str(row))
         finding_count = len(findings)
     except Exception as e:
         error_message = str(e)
