@@ -9,6 +9,10 @@ export default defineConfig({
       '/audits': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+      },
+      '/health': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
       }
     }
   }

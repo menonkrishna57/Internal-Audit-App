@@ -28,10 +28,26 @@ app.add_middleware(
 # Register routes
 app.include_router(audits.router, prefix="/audits")
 
+from sqlalchemy import text
+from app.db import get_engine
+
 @app.get("/health")
 def health_check():
-    """Confirms the API engine is alive."""
-    return {"status": "healthy", "service": "bank-audit-tool"}
+    """Confirms the API engine is alive and checks DB connection."""
+    db_status = "error"
+    try:
+        engine = get_engine()
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        db_status = "ok"
+    except Exception as e:
+        logger.error(f"DB health check failed: {e}")
+        
+    return {
+        "status": "healthy", 
+        "service": "bank-audit-tool",
+        "db_status": db_status
+    }
 
 @app.get("/")
 def home():

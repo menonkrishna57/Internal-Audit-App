@@ -70,7 +70,8 @@ def get_audit_report(
     }
 
     if format == "json":
-        return JSONResponse(content=report_data)
+        from fastapi.encoders import jsonable_encoder
+        return JSONResponse(content=jsonable_encoder(report_data))
 
     # Return HTML response using Jinja2
     return templates.TemplateResponse(

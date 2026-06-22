@@ -49,26 +49,22 @@ html, body, #root {
 
 /* ── Severity stamp ───────────────────────────────────────── */
 .stamp {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  transform: rotate(-7deg);
-  transform-origin: center;
-  font-family: 'Newsreader', Georgia, serif;
-  font-size: 0.7rem;
+  display: inline-block;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.65rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 3px 10px 4px;
-  /* Irregular inked border via SVG clip + box-shadow stack */
-  border: 2px solid currentColor;
-  border-radius: 2px;
-  /* Slightly distressed look */
-  box-shadow: 1px 1px 0 0 currentColor, -0.5px -0.5px 0 0.5px currentColor;
-  filter: url(#ink-roughen);
+  padding: 4px 8px;
+  border-radius: 4px;
 }
-.stamp-critical, .stamp-high { color: #A23B2C; }
-.stamp-medium, .stamp-low    { color: #B08F4F; }
+.stamp-absolute {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+.stamp-critical, .stamp-high { background-color: #A23B2C; color: #DCD3B8; }
+.stamp-medium, .stamp-low    { background-color: #B08F4F; color: #1E2C3A; }
 
 /* ── Tally underline ──────────────────────────────────────── */
 .tally-rule {
@@ -140,6 +136,33 @@ html, body, #root {
   word-break: break-all;
 }
 .raw-table tr:last-child td { border-bottom: none; }
+
+/* ── Markdown Rendering ───────────────────────────────────── */
+.markdown-body strong {
+  font-weight: 600;
+  color: inherit;
+}
+.markdown-body h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  margin-top: 1rem;
+  color: #211C16;
+}
+.markdown-body p {
+  margin-bottom: 0.8rem;
+}
+.markdown-body code {
+  font-family: 'JetBrains Mono', monospace;
+  background-color: rgba(30, 44, 58, 0.08);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 0.85em;
+  color: #a03c2e;
+}
+.markdown-body p:last-child {
+  margin-bottom: 0;
+}
 
 /* ── Mobile bottom nav ────────────────────────────────────── */
 @media (max-width: 767px) {

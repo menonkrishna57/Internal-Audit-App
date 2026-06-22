@@ -66,19 +66,7 @@ function makeRunId() {
   return `#${ymd}-${seq}`
 }
 
-// ── SVG roughen filter (gives the stamp its inked feel) ──────────────────────
-function InkFilter() {
-  return (
-    <svg width="0" height="0" style={{ position: 'absolute' }}>
-      <defs>
-        <filter id="ink-roughen" x="-5%" y="-5%" width="110%" height="110%">
-          <feTurbulence type="turbulence" baseFrequency="0.065" numOctaves="2" seed="3" result="noise"/>
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.4" xChannelSelector="R" yChannelSelector="G"/>
-        </filter>
-      </defs>
-    </svg>
-  )
-}
+// ── Removed SVG roughen filter (simplified badge design) ──────────────────────
 
 // ── NavRail ───────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -327,7 +315,7 @@ function FindingTabs({ finding, rule }) {
           color: '#3d322a',
         }}>
           {narrative
-            ? <p>{narrative}</p>
+            ? <div className="markdown-body" dangerouslySetInnerHTML={{ __html: window.marked ? window.marked.parse(narrative) : narrative }} />
             : (
               <p style={{ color: '#7a6a55', fontStyle: 'italic' }}>
                 Narrative not yet available. The AI summarizer may still be processing — re-run the audit to request an updated report.
@@ -405,7 +393,7 @@ function FindingCard({ rule, index }) {
       }}
     >
       {/* Severity stamp — top-right corner */}
-      <div className={severityStampClass(sev)}>
+      <div className={`${severityStampClass(sev)} stamp-absolute`}>
         {severityLabel(sev)}
       </div>
 
@@ -527,7 +515,7 @@ function ErrorState({ message, onRun, loading }) {
 }
 
 // ── Run Audit button ──────────────────────────────────────────────────────────
-function RunButton({ onRun, loading, id = 'run-audit-btn' }) {
+function RunButton({ onRun, loading, id = 'run-audit-btn', label = 'Run Audit' }) {
   const btnRef = useRef(null)
 
   function handleClick() {
@@ -566,13 +554,13 @@ function RunButton({ onRun, loading, id = 'run-audit-btn' }) {
       onAnimationEnd={() => btnRef.current?.classList.remove('btn-press')}
     >
       {loading ? <Icons.Loader /> : null}
-      {loading ? 'Running audit…' : 'Run Audit'}
+      {loading ? 'Running…' : label}
     </button>
   )
 }
 
 // ── Dashboard view ────────────────────────────────────────────────────────────
-function Dashboard({ runId, env, results, loading, error, onRun, executedAt }) {
+function Dashboard({ runId, env, results, loading, error, onRun, executedAt, health }) {
   const sorted = sortBySeverity(results)
 
   return (
@@ -618,8 +606,18 @@ function Dashboard({ runId, env, results, loading, error, onRun, executedAt }) {
           )}
         </div>
 
-        {/* Center-right: environment chip + Run Audit */}
+        {/* Center-right: environment chip + Health + Run Audit */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, marginRight: 8 }}>
+            <div title="API Status" style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Inter, sans-serif', fontSize: '0.65rem', color: '#8fa3b8' }}>
+               <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: health.api === 'ok' ? '#4CAF50' : health.api === 'error' ? '#A23B2C' : '#B08F4F' }} />
+               API
+            </div>
+            <div title="DB Status" style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Inter, sans-serif', fontSize: '0.65rem', color: '#8fa3b8' }}>
+               <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: health.db === 'ok' ? '#4CAF50' : health.db === 'error' ? '#A23B2C' : '#B08F4F' }} />
+               DB
+            </div>
+          </div>
           <div style={{
             fontFamily: 'JetBrains Mono, monospace',
             fontSize: '0.72rem',
@@ -666,7 +664,120 @@ function Dashboard({ runId, env, results, loading, error, onRun, executedAt }) {
   )
 }
 
-// ── Placeholder views for other nav sections ──────────────────────────────────
+// ── Rules view ─────────────────────────────────────────────────────────────────
+function RulesView({ results }) {
+  if (results.length === 0) {
+    return (
+      <div style={{ padding: '48px', textAlign: 'center' }}>
+        <p style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#4a6070' }}>No rules loaded</p>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.88rem', color: '#2f4455', marginTop: 12 }}>Run an audit to discover configured rules.</p>
+      </div>
+    )
+  }
+  return (
+    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#DCD3B8' }}>Configured Rules</h1>
+      <div style={{ overflowX: 'auto', background: '#DCD3B8', borderRadius: 6, padding: '16px' }}>
+        <table className="raw-table">
+          <thead>
+            <tr>
+              <th>Rule ID</th>
+              <th>Title</th>
+              <th>Severity</th>
+              <th>Remediation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.map(r => (
+              <tr key={r.rule_id}>
+                <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{r.rule_id}</td>
+                <td style={{ fontFamily: 'Inter, sans-serif', fontWeight: 500 }}>{r.title}</td>
+                <td><span className={severityStampClass(r.severity)}>{severityLabel(r.severity)}</span></td>
+                <td style={{ fontSize: '0.7rem' }}>{r.remediation || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ── Findings view ──────────────────────────────────────────────────────────────
+function FindingsView({ results }) {
+  const withFindings = results.filter(r => r.finding_count > 0)
+  const sorted = sortBySeverity(withFindings)
+  
+  if (sorted.length === 0) {
+    return (
+      <div style={{ padding: '48px', textAlign: 'center' }}>
+        <p style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#4a6070' }}>No active findings</p>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.88rem', color: '#2f4455', marginTop: 12 }}>Run an audit. Findings will appear here if any rule conditions are met.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#DCD3B8', marginBottom: 8 }}>Active Findings</h1>
+      {sorted.map((rule, i) => (
+        <FindingCard key={rule.rule_id} rule={rule} index={i} />
+      ))}
+    </div>
+  )
+}
+
+// ── Reports view ───────────────────────────────────────────────────────────────
+function ReportsView({ runId }) {
+  const [report, setReport] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const generateReport = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/audits/report?format=json')
+      if (!res.ok) throw new Error('Failed to generate report')
+      const data = await res.json()
+      setReport(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 800 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#DCD3B8' }}>Executive Narrative Report</h1>
+        <RunButton onRun={generateReport} loading={loading} id="generate-report-btn" label="Generate Narrative" />
+      </div>
+      
+      {error && <div style={{ color: '#A23B2C', fontFamily: 'Inter, sans-serif' }}>Error: {error}</div>}
+      
+      {report && (
+        <div style={{ background: '#DCD3B8', padding: '24px', borderRadius: 6, color: '#211C16' }}>
+          <div style={{ marginBottom: 16, fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42' }}>
+            Case {runId} — Generated {report.executed_at} via {report.narrative_model}
+          </div>
+          <div className="markdown-body" style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', lineHeight: 1.6 }}>
+            {report.narrative 
+              ? <div dangerouslySetInnerHTML={{ __html: window.marked ? window.marked.parse(report.narrative) : report.narrative }} />
+              : <p>No narrative generated. Ensure the AI provider is configured correctly.</p>
+            }
+          </div>
+        </div>
+      )}
+      {!report && !loading && !error && (
+        <p style={{ fontFamily: 'Inter, sans-serif', color: '#4a6070', fontSize: '0.9rem' }}>Click "Generate Narrative" above to run the checks and generate an AI-powered executive narrative.</p>
+      )}
+    </div>
+  )
+}
+
+// ── Placeholder view for settings ──────────────────────────────────────────────
 function PlaceholderView({ label }) {
   return (
     <div style={{
@@ -692,8 +803,30 @@ export default function App() {
   const [executedAt, setExecutedAt] = useState(null)
   const [runId]                   = useState(makeRunId)
 
+  const [health, setHealth]       = useState({ api: 'checking', db: 'checking' })
+
   // Read environment from Vite env or fallback
   const env = import.meta.env.VITE_ENV ?? 'development'
+
+  const checkHealth = useCallback(async () => {
+    try {
+      const res = await fetch('/health')
+      if (res.ok) {
+        const data = await res.json()
+        setHealth({ api: data.status === 'healthy' ? 'ok' : 'error', db: data.db_status === 'ok' ? 'ok' : 'error' })
+      } else {
+        setHealth({ api: 'error', db: 'error' })
+      }
+    } catch {
+      setHealth({ api: 'error', db: 'error' })
+    }
+  }, [])
+
+  useEffect(() => {
+    checkHealth()
+    const interval = setInterval(checkHealth, 30000)
+    return () => clearInterval(interval)
+  }, [checkHealth])
 
   const runAudit = useCallback(async () => {
     setLoading(true)
@@ -727,8 +860,6 @@ export default function App() {
 
   return (
     <>
-      <InkFilter />
-
       <div style={{ display: 'flex', minHeight: '100vh' }}>
         {/* Fixed left nav rail */}
         <NavRail active={activeNav} setActive={setActiveNav} />
@@ -753,11 +884,12 @@ export default function App() {
               error={error}
               onRun={runAudit}
               executedAt={executedAt}
+              health={health}
             />
           )}
-          {activeNav === 'rules'    && <PlaceholderView label="Rules" />}
-          {activeNav === 'findings' && <PlaceholderView label="Findings" />}
-          {activeNav === 'reports'  && <PlaceholderView label="Reports" />}
+          {activeNav === 'rules'    && <RulesView results={results} />}
+          {activeNav === 'findings' && <FindingsView results={results} />}
+          {activeNav === 'reports'  && <ReportsView runId={runId} />}
           {activeNav === 'settings' && <PlaceholderView label="Settings" />}
         </div>
 
