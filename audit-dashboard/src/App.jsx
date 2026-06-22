@@ -223,9 +223,9 @@ function TallyStrip({ results }) {
         <div key={key} style={{ minWidth: 60 }}>
           <div
             style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '2rem',
-              fontWeight: 500,
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '2.5rem',
+              fontWeight: 800,
               color,
               lineHeight: 1,
             }}
@@ -235,11 +235,12 @@ function TallyStrip({ results }) {
           <div
             style={{
               fontFamily: 'Inter, sans-serif',
-              fontSize: '0.62rem',
+              fontSize: '0.95rem',
+              fontWeight: 700,
               textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              color: '#4a6070',
-              marginTop: 4,
+              letterSpacing: '0.05em',
+              color,
+              marginTop: 8,
             }}
           >
             {label}
