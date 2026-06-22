@@ -495,13 +495,13 @@
                 <svg class="ai-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                <h2 class="ai-title">AI Compliance Narration (Ollama: {{ report.narrative_model or 'phi4-mini' }})</h2>
+                <h2 class="ai-title">AI Compliance Narration ({{ report.ai_provider|title }}: {{ report.narrative_model }})</h2>
             </div>
             <div class="ai-text">
                 {% if report.narrative %}
                     {{ report.narrative }}
                 {% else %}
-                    <span class="ai-fallback">AI Narrator summary unavailable (Ollama offline or timed out). Raw findings are detailed below.</span>
+                    <span class="ai-fallback">AI Narrator summary unavailable ({{ report.ai_provider|title }} offline or timed out). Raw findings are detailed below.</span>
                 {% endif %}
             </div>
         </div>

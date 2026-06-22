@@ -9,6 +9,7 @@ from sqlalchemy import Connection
 from app.db import get_connection
 from app.engine import load_rules, execute_rule
 from app.narrator import generate_narrative
+from app.config import settings
 
 logger = logging.getLogger("audit_tool.routes")
 
@@ -63,7 +64,9 @@ def get_audit_report(
     report_data = {
         "executed_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         "results": results,
-        "narrative": narrative
+        "narrative": narrative,
+        "ai_provider": settings.ai_provider,
+        "narrative_model": settings.gemini_model if settings.ai_provider.lower() == "gemini" else settings.ollama_model
     }
 
     if format == "json":
