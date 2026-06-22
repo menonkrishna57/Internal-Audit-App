@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 from sqlalchemy import Connection
 
 from app.db import get_connection
@@ -79,6 +80,54 @@ def get_audit_report(
         name="audit_report.html",
         context={"report": report_data}
     )
+
+class SettingsUpdate(BaseModel):
+    ai_provider: str
+    gemini_api_key: str
+    gemini_model: str
+    ollama_base_url: str
+    ollama_model: str
+
+@router.get("/settings")
+def get_system_settings():
+    return {
+        "ai_provider": settings.ai_provider,
+        "gemini_api_key": settings.gemini_api_key,
+        "gemini_model": settings.gemini_model,
+        "ollama_base_url": settings.ollama_base_url,
+        "ollama_model": settings.ollama_model,
+    }
+
+@router.post("/settings")
+def update_system_settings(update: SettingsUpdate):
+    settings.ai_provider = update.ai_provider
+    settings.gemini_api_key = update.gemini_api_key
+    settings.gemini_model = update.gemini_model
+    settings.ollama_base_url = update.ollama_base_url
+    settings.ollama_model = update.ollama_model
+
+    env_path = Path(__file__).parent.parent.parent / ".env"
+    if env_path.exists():
+        with open(env_path, "r") as f:
+            lines = f.readlines()
+        
+        def update_line(key, val):
+            for i, line in enumerate(lines):
+                if line.startswith(f"{key}="):
+                    lines[i] = f"{key}={val}\n"
+                    return
+            lines.append(f"{key}={val}\n")
+
+        update_line("AI_PROVIDER", update.ai_provider)
+        update_line("GEMINI_API_KEY", update.gemini_api_key)
+        update_line("GEMINI_MODEL", update.gemini_model)
+        update_line("OLLAMA_BASE_URL", update.ollama_base_url)
+        update_line("OLLAMA_MODEL", update.ollama_model)
+
+        with open(env_path, "w") as f:
+            f.writelines(lines)
+            
+    return {"status": "success"}
 
 @router.get("/{rule_id}")
 def run_single_audit(rule_id: str, connection: Connection = Depends(get_connection)):

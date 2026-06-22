@@ -864,19 +864,103 @@ function ReportsView({ runId }) {
   )
 }
 
-// ── Placeholder view for settings ──────────────────────────────────────────────
-function PlaceholderView({ label }) {
+// ── Settings view ──────────────────────────────────────────────────────────────
+function SettingsView() {
+  const [config, setConfig] = useState({
+    ai_provider: '',
+    gemini_api_key: '',
+    gemini_model: '',
+    ollama_base_url: '',
+    ollama_model: ''
+  })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  useEffect(() => {
+    fetch('/audits/settings')
+      .then(r => r.json())
+      .then(data => {
+        setConfig(data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const handleChange = (e) => {
+    setConfig({ ...config, [e.target.name]: e.target.value })
+  }
+
+  const handleSave = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setMsg('')
+    try {
+      const res = await fetch('/audits/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      })
+      if (res.ok) {
+        setMsg('Settings saved successfully.')
+      } else {
+        setMsg('Failed to save settings.')
+      }
+    } catch {
+      setMsg('Error saving settings.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) return <div style={{ padding: 48, color: '#4a6070', fontFamily: 'Inter, sans-serif' }}>Loading settings...</div>
+
   return (
-    <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: '100vh',
-    }}>
-      <p style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.3rem', color: '#4a6070' }}>
-        {label}
-      </p>
-      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.82rem', color: '#2f4455' }}>
-        This section is not yet implemented.
-      </p>
+    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 600 }}>
+      <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#DCD3B8' }}>System Settings</h1>
+      
+      <form onSubmit={handleSave} style={{ background: '#DCD3B8', padding: '24px', borderRadius: 6, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div>
+          <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', fontWeight: 600, color: '#211C16', marginBottom: 4 }}>AI Provider</label>
+          <select name="ai_provider" value={config.ai_provider} onChange={handleChange} style={{ width: '100%', padding: '8px', borderRadius: 4, border: '1px solid #c7be9f', fontFamily: 'Inter, sans-serif', color: '#211C16', backgroundColor: '#FFFFFF' }}>
+            <option value="gemini">Google Gemini</option>
+            <option value="ollama">Local Ollama</option>
+          </select>
+        </div>
+
+        {config.ai_provider === 'gemini' && (
+          <>
+            <div>
+              <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', fontWeight: 600, color: '#211C16', marginBottom: 4 }}>Gemini API Key</label>
+              <input type="password" name="gemini_api_key" value={config.gemini_api_key} onChange={handleChange} style={{ width: '100%', padding: '8px', borderRadius: 4, border: '1px solid #c7be9f', fontFamily: 'Inter, sans-serif', color: '#211C16', backgroundColor: '#FFFFFF' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', fontWeight: 600, color: '#211C16', marginBottom: 4 }}>Gemini Model</label>
+              <input type="text" name="gemini_model" value={config.gemini_model} onChange={handleChange} style={{ width: '100%', padding: '8px', borderRadius: 4, border: '1px solid #c7be9f', fontFamily: 'Inter, sans-serif', color: '#211C16', backgroundColor: '#FFFFFF' }} />
+            </div>
+          </>
+        )}
+
+        {config.ai_provider === 'ollama' && (
+          <>
+            <div>
+              <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', fontWeight: 600, color: '#211C16', marginBottom: 4 }}>Ollama Base URL</label>
+              <input type="text" name="ollama_base_url" value={config.ollama_base_url} onChange={handleChange} style={{ width: '100%', padding: '8px', borderRadius: 4, border: '1px solid #c7be9f', fontFamily: 'Inter, sans-serif', color: '#211C16', backgroundColor: '#FFFFFF' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', fontWeight: 600, color: '#211C16', marginBottom: 4 }}>Ollama Model</label>
+              <input type="text" name="ollama_model" value={config.ollama_model} onChange={handleChange} style={{ width: '100%', padding: '8px', borderRadius: 4, border: '1px solid #c7be9f', fontFamily: 'Inter, sans-serif', color: '#211C16', backgroundColor: '#FFFFFF' }} />
+            </div>
+          </>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+          <button type="submit" disabled={saving} style={{ padding: '8px 16px', background: '#211C16', color: '#DCD3B8', border: 'none', borderRadius: 4, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+            {saving ? 'Saving...' : 'Save Settings'}
+          </button>
+          {msg && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', color: msg.includes('Error') || msg.includes('Failed') ? '#A23B2C' : '#2e6b2f' }}>{msg}</span>}
+        </div>
+      </form>
     </div>
   )
 }
@@ -977,7 +1061,7 @@ export default function App() {
           {activeNav === 'rules'    && <RulesView results={results} />}
           {activeNav === 'findings' && <FindingsView results={results} />}
           {activeNav === 'reports'  && <ReportsView runId={runId} />}
-          {activeNav === 'settings' && <PlaceholderView label="Settings" />}
+          {activeNav === 'settings' && <SettingsView />}
         </div>
 
         {/* Mobile bottom nav */}
