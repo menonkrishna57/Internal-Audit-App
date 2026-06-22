@@ -1,0 +1,19 @@
+id: generic_shared_accounts
+title: "Shared / Generic Account Usage"
+severity: high
+query: |
+  -- PLACEHOLDER: Find accounts in credentials matching generic patterns (admin, test, billing, etc.)
+  -- Context schema:
+  -- - app_security.cloud_credentials(credential_id int, user_name text, access_level text, etc.)
+  -- SQL placeholder query:
+  SELECT credential_id, user_name, access_level
+  FROM app_security.cloud_credentials
+  WHERE user_name ILIKE '%admin%'
+     OR user_name ILIKE '%test%'
+     OR user_name ILIKE '%shared%'
+     OR user_name ILIKE '%service%'
+     OR user_name ILIKE '%billing%'
+remediation: >
+  Deactivate generic accounts or migrate them to named service accounts with
+  individual accountability. Where shared accounts are operationally necessary,
+  implement compensating controls (session recording, MFA, access logging).

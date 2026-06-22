@@ -1,0 +1,14 @@
+id: impossible_travel_logins
+title: "Impossible Travel — Geographic Login Anomalies"
+severity: critical
+window_minutes: 30
+query: |
+  -- PLACEHOLDER: Find user IDs with successful logins from different locations within window_minutes.
+  -- Context schema:
+  -- - app_security.network_logins(log_id int, employee_id uuid, login_timestamp timestamp, ip_address text, status text)
+  -- SQL placeholder query:
+  SELECT 'placeholder' AS status
+remediation: >
+  Immediately lock the affected account and initiate a credential compromise
+  investigation. Require password reset and MFA re-enrollment before restoring
+  access. Notify the employee and their manager.

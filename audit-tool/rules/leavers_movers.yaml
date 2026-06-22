@@ -1,0 +1,27 @@
+id: terminated_with_active_access
+title: "Leavers & Movers — Terminated Employees with Active Access"
+severity: critical
+query: |
+  -- PLACEHOLDER: Find terminated employees who still have active permissions or credentials.
+  -- Context schema:
+  -- - hr_schema.employees(id uuid, hr_status text, etc.)
+  -- - app_security.application_permissions(perm_id int, employee_id uuid, app_name text, etc.)
+  -- - app_security.cloud_credentials(credential_id int, user_name text, etc.)
+  -- SQL placeholder query:
+  SELECT e.id, e.full_name, e.department, e.hr_status
+  FROM hr_schema.employees e
+  WHERE e.hr_status = 'Terminated'
+    AND (
+      EXISTS (
+        SELECT 1 FROM app_security.application_permissions ap
+        WHERE ap.employee_id = e.id
+      )
+      OR EXISTS (
+        SELECT 1 FROM app_security.cloud_credentials cc
+        WHERE cc.user_name = e.full_name  -- Example joining on name or credential mapping
+      )
+    )
+remediation: >
+  Immediately revoke all application permissions and cloud credentials for
+  terminated employees. For internal transfers, review and adjust permissions
+  to match the new role within 24 hours of the transfer effective date.

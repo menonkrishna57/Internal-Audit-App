@@ -1,0 +1,14 @@
+id: brute_force_then_success
+title: "Brute Force — Consecutive Failures Followed by Success"
+severity: critical
+query: |
+  -- PLACEHOLDER: Find user accounts with multiple consecutive failed login attempts within a 15-minute window, followed by a successful login.
+  -- Context schema:
+  -- - app_security.network_logins(log_id int, employee_id uuid, login_timestamp timestamp, ip_address text, status text)
+  -- SQL placeholder query:
+  SELECT 'placeholder' AS status
+remediation: >
+  Lock the account pending investigation. Review the source IP addresses of
+  the failed attempts. If the successful login originated from a different IP
+  than the failures, treat as a confirmed compromise. Enforce adaptive MFA
+  and notify the SOC.

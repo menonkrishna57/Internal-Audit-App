@@ -1,0 +1,20 @@
+id: mass_data_exfiltration
+title: "Mass Data Extraction / Exfiltration"
+severity: critical
+bytes_threshold: 1073741824
+query: |
+  -- PLACEHOLDER: Find user accounts downloading/copying/exporting high volume of customer records or credit card data.
+  -- Context schema:
+  -- - app_security.cloud_event_logs(event_id int, log_source text, event_timestamp timestamp, payload jsonb)
+  -- SQL placeholder query:
+  SELECT
+    payload->'userIdentity'->>'userName' AS user_name,
+    SUM((payload->>'bytesTransferredOut')::bigint) AS total_bytes
+  FROM app_security.cloud_event_logs
+  WHERE payload->>'eventName' = 'GetObject'
+  GROUP BY payload->'userIdentity'->>'userName'
+  HAVING SUM((payload->>'bytesTransferredOut')::bigint) > {bytes_threshold}
+remediation: >
+  Immediately suspend the user's cloud credentials and revoke active sessions.
+  Preserve CloudTrail logs for forensic analysis. Engage the Incident Response
+  team and notify the Data Protection Officer if PII exposure is suspected.
