@@ -71,11 +71,9 @@ def get_audit_report(
 
     # Return HTML response using Jinja2
     return templates.TemplateResponse(
-        "audit_report.html",
-        {
-            "request": request,
-            "report": report_data
-        }
+        request=request,
+        name="audit_report.html",
+        context={"report": report_data}
     )
 
 @router.get("/{rule_id}")

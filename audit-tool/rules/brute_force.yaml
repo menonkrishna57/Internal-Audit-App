@@ -19,7 +19,7 @@ query: |
       LEAD(ip_address) OVER (PARTITION BY employee_id ORDER BY login_timestamp) AS next_ip
     FROM app_security.network_logins
   )
-  SELECT
+  SELECT DISTINCT ON (lw.employee_id, lw.next_login_at)
     lw.employee_id,
     e.full_name,
     e.department,
@@ -33,7 +33,7 @@ query: |
   WHERE lw.status = 'Failed'
     AND lw.failures_in_window >= 3
     AND lw.next_status = 'Success'
-  ORDER BY lw.login_timestamp DESC
+  ORDER BY lw.employee_id, lw.next_login_at, lw.login_timestamp DESC
 remediation: >
   Lock the account pending investigation. Review the source IP addresses of
   the failed attempts. If the successful login originated from a different IP

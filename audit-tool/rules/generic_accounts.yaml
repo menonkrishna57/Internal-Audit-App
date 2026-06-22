@@ -8,10 +8,17 @@ query: |
     access_level,
     password_last_used,
     access_key_last_used
-  FROM app_security.cloud_credentials
-  WHERE user_name ~* '^(admin|test|shared|service|billing|svc|root|temp|vendor)'
-  ORDER BY access_level DESC, user_name
+  FROM app_security.cloud_credentials cc
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM hr_schema.employees e
+    WHERE
+      cc.user_name ILIKE '%' || split_part(e.full_name, ' ', 1) || '%'
+      OR cc.user_name ILIKE '%' || split_part(e.full_name, ' ', 2) || '%'
+  )
+  ORDER BY cc.access_level DESC, cc.user_name
 remediation: >
   Deactivate generic accounts or migrate them to named service accounts with
   individual accountability. Where shared accounts are operationally necessary,
   implement compensating controls (session recording, MFA, access logging).
+#TODO: This is very heavy as the database gets bigger

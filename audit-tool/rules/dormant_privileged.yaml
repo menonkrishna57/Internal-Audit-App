@@ -23,13 +23,14 @@ query: |
 
   SELECT
     'cloud_credential' AS source,
-    NULL AS employee_id,
-    cc.user_name AS full_name,
-    NULL AS department,
+    e.id AS employee_id,
+    COALESCE(e.full_name, cc.user_name) AS full_name,
+    e.department,
     cc.access_level AS account_or_app,
     cc.access_level AS role_or_level,
     GREATEST(cc.password_last_used, cc.access_key_last_used) AS last_used_at
   FROM app_security.cloud_credentials cc
+  LEFT JOIN hr_schema.employees e ON cc.user_name ILIKE '%' || split_part(e.full_name, ' ', 1) || '%'
   WHERE cc.access_level IN ('Admin', 'Root')
     AND (
       GREATEST(cc.password_last_used, cc.access_key_last_used) < NOW() - INTERVAL '{threshold_days} days'

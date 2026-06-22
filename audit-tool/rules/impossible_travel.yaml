@@ -3,25 +3,31 @@ title: "Impossible Travel — Geographic Login Anomalies"
 severity: critical
 window_minutes: 30
 query: |
+  WITH successive_logins AS (
+    SELECT
+      employee_id,
+      login_timestamp AS login_1_at,
+      ip_address AS login_1_ip,
+      LEAD(login_timestamp) OVER (PARTITION BY employee_id ORDER BY login_timestamp) AS login_2_at,
+      LEAD(ip_address) OVER (PARTITION BY employee_id ORDER BY login_timestamp) AS login_2_ip
+    FROM app_security.network_logins
+    WHERE status = 'Success'
+  )
   SELECT
-    nl1.employee_id,
+    sl.employee_id,
     e.full_name,
     e.department,
-    nl1.login_timestamp AS login_1_at,
-    nl1.ip_address AS login_1_ip,
-    nl2.login_timestamp AS login_2_at,
-    nl2.ip_address AS login_2_ip,
-    EXTRACT(EPOCH FROM (nl2.login_timestamp - nl1.login_timestamp)) / 60 AS minutes_apart
-  FROM app_security.network_logins nl1
-  JOIN app_security.network_logins nl2
-    ON nl1.employee_id = nl2.employee_id
-   AND nl2.login_timestamp > nl1.login_timestamp
-   AND nl2.login_timestamp <= nl1.login_timestamp + INTERVAL '{window_minutes} minutes'
-   AND nl1.ip_address <> nl2.ip_address
-  JOIN hr_schema.employees e ON e.id = nl1.employee_id
-  WHERE nl1.status = 'Success'
-    AND nl2.status = 'Success'
-  ORDER BY nl1.login_timestamp DESC
+    sl.login_1_at,
+    sl.login_1_ip,
+    sl.login_2_at,
+    sl.login_2_ip,
+    EXTRACT(EPOCH FROM (sl.login_2_at - sl.login_1_at)) / 60 AS minutes_apart
+  FROM successive_logins sl
+  JOIN hr_schema.employees e ON e.id = sl.employee_id
+  WHERE sl.login_2_ip IS NOT NULL 
+    AND sl.login_1_ip <> sl.login_2_ip
+    AND sl.login_2_at <= sl.login_1_at + INTERVAL '{window_minutes} minutes'
+  ORDER BY sl.login_1_at DESC
 remediation: >
   Immediately lock the affected account and initiate a credential compromise
   investigation. Require password reset and MFA re-enrollment before restoring

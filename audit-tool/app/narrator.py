@@ -1,9 +1,23 @@
 import json
 import logging
 import httpx
+from uuid import UUID
+from datetime import datetime, date
+from decimal import Decimal
 from app.config import settings
 
 logger = logging.getLogger("audit_tool.narrator")
+
+class _AuditJSONEncoder(json.JSONEncoder):
+    """Handles non-serializable types that come back from Postgres (UUID, datetime, Decimal, etc.)."""
+    def default(self, obj):
+        if isinstance(obj, UUID):
+            return str(obj)
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
 
 def generate_narrative(findings: list[dict]) -> str | None:
     """
@@ -25,7 +39,7 @@ def generate_narrative(findings: list[dict]) -> str | None:
             "findings_sample": f.get("findings", [])[:5]  # Limit to first 5 items to avoid blowing up context
         })
 
-    findings_json = json.dumps(simplified_findings, indent=2)
+    findings_json = json.dumps(simplified_findings, indent=2, cls=_AuditJSONEncoder)
 
     prompt = f"""You are a senior compliance analyst summarizing internal bank audit findings.
 
@@ -47,7 +61,9 @@ FINDINGS DATA:
         "prompt": prompt,
         "system": "You are a precise and factual compliance narration assistant. Never speculate or hallucinate.",
         "options": {
-            "temperature": 0.2
+            "temperature": 0.2,
+            "num_ctx": 4096,
+            "think": False 
         },
         "stream": False
     }
@@ -55,7 +71,7 @@ FINDINGS DATA:
     try:
         logger.info(f"Contacting Ollama at {url} using model {settings.ollama_model}...")
         # Use a timeout (e.g. 30s) to avoid hanging indefinitely if Ollama is slow/offline
-        response = httpx.post(url, json=payload, timeout=45.0)
+        response = httpx.post(url, json=payload, timeout=300.0)
         
         if response.status_code == 200:
             result = response.json()
