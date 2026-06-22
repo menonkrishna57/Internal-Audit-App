@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Internal Bank Audit compliance report summarizing automated security and operational policy findings.">
+    <title>Bank Operational Audit Report</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: rgba(30, 41, 59, 0.7);
+            --surface-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            
+            --accent-primary: #6366f1; /* Indigo */
+            --accent-secondary: #3b82f6; /* Blue */
+            
+            --severity-low: #10b981; /* Emerald */
+            --severity-medium: #f59e0b; /* Amber */
+            --severity-high: #f97316; /* Orange */
+            --severity-critical: #ef4444; /* Rose/Red */
+            
+            --glow-ai: radial-gradient(circle at top left, rgba(99, 102, 241, 0.15), transparent 70%);
+            --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Basic resets & Typography */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+            padding: 2.5rem 1.5rem;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header section */
+        header {
+            margin-bottom: 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px solid var(--surface-border);
+            padding-bottom: 1.5rem;
+        }
+
+        .header-title-group h1 {
+            font-size: 2.25rem;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-meta {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .meta-item strong {
+            color: var(--text-primary);
+        }
+
+        .badge-status {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--severity-low);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* AI Narration Card */
+        .ai-card {
+            position: relative;
+            background: var(--surface-color);
+            border: 1px solid var(--surface-border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            box-shadow: var(--shadow-premium);
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: var(--transition-smooth);
+        }
+
+        .ai-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--glow-ai);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .ai-card-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .ai-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            color: var(--accent-primary);
+        }
+
+        .ai-title {
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .ai-text {
+            color: #cbd5e1;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .ai-fallback {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* Findings Grid & Rules List */
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .rules-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .rule-card {
+            background: var(--surface-color);
+            border: 1px solid var(--surface-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-premium);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: var(--transition-smooth);
+        }
+
+        .rule-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .rule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        .rule-title-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .rule-id {
+            font-size: 0.75rem;
+            font-family: monospace;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+        }
+
+        .rule-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .rule-badges {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        /* Badges */
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+        }
+
+        .badge-low {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--severity-low);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .badge-medium {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: var(--severity-medium);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .badge-high {
+            background-color: rgba(249, 115, 22, 0.15);
+            color: var(--severity-high);
+            border: 1px solid rgba(249, 115, 22, 0.25);
+        }
+
+        .badge-critical {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--severity-critical);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+
+        .badge-count {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--surface-border);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .badge-count.has-findings {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--severity-critical);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            font-weight: 700;
+        }
+
+        .rule-details {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .info-block {
+            font-size: 0.925rem;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-content {
+            color: #cbd5e1;
+        }
+
+        /* Collapsible Findings Table */
+        .collapsible-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--surface-border);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-align: left;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+
+        .collapsible-trigger:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
+            background: rgba(15, 23, 42, 0.4);
+            border-left: 1px solid var(--surface-border);
+            border-right: 1px solid var(--surface-border);
+            border-bottom: 1px solid var(--surface-border);
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+        }
+
+        .collapsible-content.expanded {
+            max-height: 2000px;
+            transition: max-height 0.3s ease-in;
+            overflow-y: auto;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            padding: 0.75rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid var(--surface-border);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.02em;
+        }
+
+        td {
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: #cbd5e1;
+            font-family: 'Inter', sans-serif;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+            color: #fff;
+        }
+
+        .empty-findings {
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Error block */
+        .error-block {
+            background-color: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 1rem;
+            border-radius: 6px;
+            color: #fca5a5;
+            font-family: monospace;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Chevron Animation */
+        .chevron {
+            width: 1rem;
+            height: 1rem;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            transition: transform 0.2s ease;
+        }
+
+        .expanded .chevron {
+            transform: rotate(180deg);
+        }
+
+        /* Print Media Styles */
+        @media print {
+            body {
+                background-color: #fff;
+                color: #000;
+                padding: 0;
+                background-image: none;
+            }
+            .ai-card, .rule-card {
+                background: #fff;
+                border: 1px solid #ddd;
+                box-shadow: none;
+                color: #000;
+                page-break-inside: avoid;
+            }
+            .ai-card::before {
+                display: none;
+            }
+            .ai-text {
+                color: #222;
+            }
+            .rule-title, .ai-title {
+                color: #000;
+            }
+            .info-content {
+                color: #333;
+            }
+            .collapsible-content {
+                max-height: none !important;
+                display: block !important;
+                border: none;
+            }
+            .collapsible-trigger {
+                display: none;
+            }
+            table {
+                color: #000;
+            }
+            th {
+                background: #eee;
+                color: #000;
+                border-bottom: 1px solid #000;
+            }
+            td {
+                color: #222;
+                border-bottom: 1px solid #eee;
+            }
+            header {
+                border-bottom: 2px solid #000;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="header-title-group">
+            <h1>Bank Operational Audit Report</h1>
+            <div class="header-meta">
+                <div class="meta-item">Generated At: <strong>{{ report.executed_at }}</strong></div>
+                <div class="meta-item">Status: <span class="badge-status">Active Audit Engine</span></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- AI Narration Card -->
+    <section class="ai-card" id="ai-narrative-section">
+        <div class="ai-card-content">
+            <div class="ai-header">
+                <svg class="ai-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <h2 class="ai-title">AI Compliance Narration (Ollama: {{ report.narrative_model or 'phi4-mini' }})</h2>
+            </div>
+            <div class="ai-text">
+                {% if report.narrative %}
+                    {{ report.narrative }}
+                {% else %}
+                    <span class="ai-fallback">AI Narrator summary unavailable (Ollama offline or timed out). Raw findings are detailed below.</span>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Audit Findings Grid -->
+    <section>
+        <h2 class="section-title">
+            <svg style="width:1.5rem; height:1.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+            Audit Rules Execution ({{ report.results|length }} rules loaded)
+        </h2>
+        
+        <div class="rules-list">
+            {% for result in report.results %}
+                <div class="rule-card" id="rule-card-{{ result.rule_id }}">
+                    <div class="rule-header">
+                        <div class="rule-title-group">
+                            <span class="rule-id">{{ result.rule_id }}</span>
+                            <h3 class="rule-title">{{ result.title }}</h3>
+                        </div>
+                        <div class="rule-badges">
+                            <span class="badge badge-{{ result.severity }}">{{ result.severity }}</span>
+                            <span class="badge-count {% if result.finding_count > 0 %}has-findings{% endif %}">
+                                {{ result.finding_count }} {% if result.finding_count == 1 %}finding{% else %}findings{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="rule-details">
+                        <div class="info-block">
+                            <div class="info-label">Policy Remediation Instruction</div>
+                            <div class="info-content">{{ result.remediation }}</div>
+                        </div>
+                    </div>
+
+                    {% if result.error %}
+                        <div class="error-block">
+                            <strong>Query Execution Error:</strong><br>
+                            {{ result.error }}
+                        </div>
+                    {% elif result.finding_count > 0 %}
+                        <!-- Collapsible Trigger -->
+                        <button class="collapsible-trigger" onclick="toggleCollapsible('{{ result.rule_id }}')" id="btn-{{ result.rule_id }}">
+                            <span>View Findings Detail Table</span>
+                            <svg class="chevron" id="chevron-{{ result.rule_id }}" viewBox="0 0 24 24">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+
+                        <!-- Collapsible Content (Table) -->
+                        <div class="collapsible-content" id="content-{{ result.rule_id }}">
+                            <div class="table-container">
+                                <table id="table-{{ result.rule_id }}">
+                                    <thead>
+                                        <tr>
+                                            {% if result.findings|length > 0 %}
+                                                {% for key in result.findings[0].keys() %}
+                                                    <th>{{ key }}</th>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in result.findings %}
+                                            <tr>
+                                                {% for val in row.values() %}
+                                                    <td>{{ val }}</td>
+                                                {% endfor %}
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="empty-findings">
+                            No violations of this policy were detected in this run.
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<script>
+    function toggleCollapsible(ruleId) {
+        const content = document.getElementById('content-' + ruleId);
+        const trigger = document.getElementById('btn-' + ruleId);
+        
+        if (content.classList.contains('expanded')) {
+            content.classList.remove('expanded');
+            trigger.classList.remove('expanded');
+        } else {
+            content.classList.add('expanded');
+            trigger.classList.add('expanded');
+        }
+    }
+</script>
+</body>
+</html>
