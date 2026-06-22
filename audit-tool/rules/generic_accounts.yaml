@@ -9,15 +9,7 @@ query: |
     password_last_used,
     access_key_last_used
   FROM app_security.cloud_credentials
-  WHERE user_name ILIKE '%admin%'
-     OR user_name ILIKE '%test%'
-     OR user_name ILIKE '%shared%'
-     OR user_name ILIKE '%service%'
-     OR user_name ILIKE '%billing%'
-     OR user_name ILIKE '%svc%'
-     OR user_name ILIKE '%root%'
-     OR user_name ILIKE '%temp%'
-     OR user_name ILIKE '%vendor%'
+  WHERE user_name ~* '^(admin|test|shared|service|billing|svc|root|temp|vendor)'
   ORDER BY access_level DESC, user_name
 remediation: >
   Deactivate generic accounts or migrate them to named service accounts with
