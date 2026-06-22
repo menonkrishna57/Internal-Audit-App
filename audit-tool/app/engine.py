@@ -116,10 +116,10 @@ def execute_rule(rule: dict, connection: Connection) -> dict:
     try:
         result = connection.execute(text(sql_to_run))
         # Convert rows to dictionaries
-        logger.info(sql_to_run)
+        # logger.info(sql_to_run)
         for row in result:
             findings.append(dict(row._mapping))
-            logger.info("Result: "+str(row))
+            # logger.debug("Result: "+str(row))
         finding_count = len(findings)
     except Exception as e:
         error_message = str(e)

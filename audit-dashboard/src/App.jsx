@@ -748,26 +748,113 @@ function ReportsView({ runId }) {
     }
   }
 
+  const downloadPdf = () => {
+    // Native print dialog ensures vectors, selectable text, and proper pagination
+    window.print();
+  }
+
   return (
     <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 800 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#DCD3B8' }}>Executive Narrative Report</h1>
-        <RunButton onRun={generateReport} loading={loading} id="generate-report-btn" label="Generate Narrative" />
+        <div style={{ display: 'flex', gap: 12 }}>
+          {report && (
+            <button onClick={downloadPdf} style={{
+              padding: '9px 20px', background: 'transparent', color: '#DCD3B8', 
+              border: '1px solid #DCD3B8', borderRadius: 4, cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', fontWeight: 600
+            }}>
+              Download PDF
+            </button>
+          )}
+          <RunButton onRun={generateReport} loading={loading} id="generate-report-btn" label="Generate Narrative" />
+        </div>
       </div>
       
       {error && <div style={{ color: '#A23B2C', fontFamily: 'Inter, sans-serif' }}>Error: {error}</div>}
       
       {report && (
-        <div style={{ background: '#DCD3B8', padding: '24px', borderRadius: 6, color: '#211C16' }}>
-          <div style={{ marginBottom: 16, fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42' }}>
-            Case {runId} — Generated {report.executed_at} via {report.narrative_model}
+        <div id="report-content" style={{ background: '#DCD3B8', padding: '32px', borderRadius: 6, color: '#211C16' }}>
+          {/* Header */}
+          <div style={{ borderBottom: '2px solid #211C16', paddingBottom: 16, marginBottom: 24 }}>
+            <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '2rem', margin: 0 }}>Audit Case File</h1>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.8rem', color: '#6b5d42', marginTop: 8 }}>
+              Case ID: {runId} <br/>
+              Generated: {report.executed_at} <br/>
+              AI Model: {report.narrative_model}
+            </div>
           </div>
-          <div className="markdown-body" style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', lineHeight: 1.6 }}>
+
+          {/* Executive Summary */}
+          <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.4rem', marginBottom: 12 }}>Executive Summary</h2>
+          <div className="markdown-body" style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 32 }}>
             {report.narrative 
               ? <div dangerouslySetInnerHTML={{ __html: window.marked ? window.marked.parse(report.narrative) : report.narrative }} />
-              : <p>No narrative generated. Ensure the AI provider is configured correctly.</p>
+              : <p>No narrative generated.</p>
             }
           </div>
+
+          {/* Active Findings */}
+          <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.4rem', marginBottom: 12 }}>Active Findings Detail</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }}>
+            {report.results.filter(r => r.finding_count > 0).length === 0 ? (
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>No anomalies detected in this run.</p>
+            ) : (
+              report.results.filter(r => r.finding_count > 0).map(rule => (
+                <div key={rule.rule_id} style={{ pageBreakInside: 'avoid', background: 'rgba(255,255,255,0.4)', padding: 16, borderRadius: 4, borderLeft: `4px solid ${rule.severity === 'critical' || rule.severity === 'high' ? '#A23B2C' : '#B08F4F'}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <div>
+                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42' }}>{rule.rule_id}</div>
+                      <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', margin: '4px 0', fontWeight: 600 }}>{rule.title}</h3>
+                    </div>
+                    <span className={severityStampClass(rule.severity)} style={{ position: 'static' }}>{severityLabel(rule.severity)}</span>
+                  </div>
+                  {/* Findings Table */}
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', fontSize: '0.8rem', fontFamily: 'Inter, sans-serif', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid #c7be9f', textAlign: 'left' }}>
+                          {Object.keys(rule.findings[0] || {}).map(k => (
+                            <th key={k} style={{ padding: '6px 8px', fontWeight: 600, color: '#4a3d2c' }}>{k}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rule.findings.map((f, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid rgba(199, 190, 159, 0.5)' }}>
+                            {Object.values(f).map((val, j) => (
+                              <td key={j} style={{ padding: '6px 8px' }}>{String(val)}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Configured Rules Evaluated */}
+          <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.4rem', marginBottom: 12 }}>Rules Evaluated</h2>
+          <table style={{ width: '100%', fontSize: '0.85rem', fontFamily: 'Inter, sans-serif', borderCollapse: 'collapse', background: 'rgba(255,255,255,0.4)', borderRadius: 4, overflow: 'hidden' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #c7be9f', textAlign: 'left' }}>
+                <th style={{ padding: '8px 12px' }}>Rule ID</th>
+                <th style={{ padding: '8px 12px' }}>Title</th>
+                <th style={{ padding: '8px 12px' }}>Severity</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.results.map(r => (
+                <tr key={r.rule_id} style={{ borderBottom: '1px solid rgba(199, 190, 159, 0.5)' }}>
+                  <td style={{ padding: '8px 12px', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem' }}>{r.rule_id}</td>
+                  <td style={{ padding: '8px 12px', fontWeight: 500 }}>{r.title}</td>
+                  <td style={{ padding: '8px 12px' }}>{severityLabel(r.severity)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
       {!report && !loading && !error && (
@@ -865,7 +952,7 @@ export default function App() {
         <NavRail active={activeNav} setActive={setActiveNav} />
 
         {/* Main scrollable content area (offset by nav width on desktop) */}
-        <div
+        <div className="main-content"
           style={{
             marginLeft: 220,
             flex: 1,

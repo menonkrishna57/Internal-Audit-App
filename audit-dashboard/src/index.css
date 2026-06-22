@@ -167,8 +167,33 @@ html, body, #root {
 /* ── Mobile bottom nav ────────────────────────────────────── */
 @media (max-width: 767px) {
   .nav-rail   { display: none !important; }
-  .bottom-nav { display: flex !important; }
-  .main-area  { padding-bottom: 64px; }
+  .mobile-nav { display: flex !important; }
+}
+
+/* ── Print / PDF Export Styles ───────────────────────────── */
+@media print {
+  body {
+    background: #DCD3B8 !important;
+    color: #211C16 !important;
+  }
+  .nav-rail, .nav-btn, button {
+    display: none !important;
+  }
+  .main-content {
+    margin-left: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  #root, #root > div {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
 @media (min-width: 768px) {
   .bottom-nav { display: none !important; }
