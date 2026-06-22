@@ -3,19 +3,21 @@ title: "Inactive Accounts — Stale Network Logins"
 severity: medium
 threshold_days: 10
 query: |
-  -- PLACEHOLDER: Find active employees with no login in {threshold_days} days.
-  -- Context schema:
-  -- - hr_schema.employees(id uuid, full_name text, department text, hr_status text, updated_at timestamp)
-  -- - app_security.network_logins(log_id int, employee_id uuid, login_timestamp timestamp, ip_address text, status text)
-  -- SQL placeholder query:
-  SELECT e.id, e.full_name, e.department, e.hr_status
+  SELECT
+    e.id,
+    e.full_name,
+    e.department,
+    e.hr_status,
+    MAX(nl.login_timestamp) AS last_login_at
   FROM hr_schema.employees e
+  LEFT JOIN app_security.network_logins nl
+    ON nl.employee_id = e.id
+    AND nl.status = 'Success'
   WHERE e.hr_status = 'Active'
-    AND NOT EXISTS (
-      SELECT 1 FROM app_security.network_logins nl
-      WHERE nl.employee_id = e.id
-        AND nl.login_timestamp > NOW() - INTERVAL '{threshold_days} days'
-    )
+  GROUP BY e.id, e.full_name, e.department, e.hr_status
+  HAVING MAX(nl.login_timestamp) < NOW() - INTERVAL '{threshold_days} days'
+     OR MAX(nl.login_timestamp) IS NULL
+  ORDER BY last_login_at ASC NULLS FIRST
 remediation: >
   Disable or suspend network accounts for active employees with no login
   activity beyond the threshold period. Escalate to the employee's manager

@@ -3,11 +3,25 @@ title: "Impossible Travel — Geographic Login Anomalies"
 severity: critical
 window_minutes: 30
 query: |
-  -- PLACEHOLDER: Find user IDs with successful logins from different locations within window_minutes.
-  -- Context schema:
-  -- - app_security.network_logins(log_id int, employee_id uuid, login_timestamp timestamp, ip_address text, status text)
-  -- SQL placeholder query:
-  SELECT 'placeholder' AS status
+  SELECT
+    nl1.employee_id,
+    e.full_name,
+    e.department,
+    nl1.login_timestamp AS login_1_at,
+    nl1.ip_address AS login_1_ip,
+    nl2.login_timestamp AS login_2_at,
+    nl2.ip_address AS login_2_ip,
+    EXTRACT(EPOCH FROM (nl2.login_timestamp - nl1.login_timestamp)) / 60 AS minutes_apart
+  FROM app_security.network_logins nl1
+  JOIN app_security.network_logins nl2
+    ON nl1.employee_id = nl2.employee_id
+   AND nl2.login_timestamp > nl1.login_timestamp
+   AND nl2.login_timestamp <= nl1.login_timestamp + INTERVAL '{window_minutes} minutes'
+   AND nl1.ip_address <> nl2.ip_address
+  JOIN hr_schema.employees e ON e.id = nl1.employee_id
+  WHERE nl1.status = 'Success'
+    AND nl2.status = 'Success'
+  ORDER BY nl1.login_timestamp DESC
 remediation: >
   Immediately lock the affected account and initiate a credential compromise
   investigation. Require password reset and MFA re-enrollment before restoring

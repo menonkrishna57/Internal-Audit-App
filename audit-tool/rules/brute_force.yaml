@@ -1,12 +1,39 @@
 id: brute_force_then_success
 title: "Brute Force — Consecutive Failures Followed by Success"
 severity: critical
+window_minutes: 15
 query: |
-  -- PLACEHOLDER: Find user accounts with multiple consecutive failed login attempts within a 15-minute window, followed by a successful login.
-  -- Context schema:
-  -- - app_security.network_logins(log_id int, employee_id uuid, login_timestamp timestamp, ip_address text, status text)
-  -- SQL placeholder query:
-  SELECT 'placeholder' AS status
+  WITH login_windows AS (
+    SELECT
+      employee_id,
+      login_timestamp,
+      status,
+      ip_address,
+      COUNT(*) FILTER (WHERE status = 'Failed') OVER (
+        PARTITION BY employee_id
+        ORDER BY login_timestamp
+        RANGE BETWEEN INTERVAL '{window_minutes} minutes' PRECEDING AND CURRENT ROW
+      ) AS failures_in_window,
+      LEAD(status) OVER (PARTITION BY employee_id ORDER BY login_timestamp) AS next_status,
+      LEAD(login_timestamp) OVER (PARTITION BY employee_id ORDER BY login_timestamp) AS next_login_at,
+      LEAD(ip_address) OVER (PARTITION BY employee_id ORDER BY login_timestamp) AS next_ip
+    FROM app_security.network_logins
+  )
+  SELECT
+    lw.employee_id,
+    e.full_name,
+    e.department,
+    lw.login_timestamp AS last_failure_at,
+    lw.ip_address AS failure_ip,
+    lw.failures_in_window,
+    lw.next_login_at AS success_at,
+    lw.next_ip AS success_ip
+  FROM login_windows lw
+  JOIN hr_schema.employees e ON e.id = lw.employee_id
+  WHERE lw.status = 'Failed'
+    AND lw.failures_in_window >= 3
+    AND lw.next_status = 'Success'
+  ORDER BY lw.login_timestamp DESC
 remediation: >
   Lock the account pending investigation. Review the source IP addresses of
   the failed attempts. If the successful login originated from a different IP

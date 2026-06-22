@@ -1,13 +1,41 @@
 id: dormant_privileged_access
 title: "Dormant Privileged Accounts"
 severity: high
+threshold_days: 90
 query: |
-  -- PLACEHOLDER: Find elevated permission users or admins with no recent privilege usage.
-  -- Context schema:
-  -- - app_security.application_permissions(perm_id int, employee_id uuid, app_name text, permission_name text, is_privileged bool, last_used_at timestamp)
-  -- - app_security.cloud_credentials(credential_id int, user_name text, access_level text, password_last_used timestamp, access_key_last_used timestamp)
-  -- SQL placeholder query:
-  SELECT 'placeholder' AS status
+  SELECT
+    'application_permission' AS source,
+    e.id AS employee_id,
+    e.full_name,
+    e.department,
+    ap.app_name AS account_or_app,
+    ap.permission_name AS role_or_level,
+    ap.last_used_at AS last_used_at
+  FROM app_security.application_permissions ap
+  JOIN hr_schema.employees e ON e.id = ap.employee_id
+  WHERE ap.is_privileged = true
+    AND (
+      ap.last_used_at < NOW() - INTERVAL '{threshold_days} days'
+      OR ap.last_used_at IS NULL
+    )
+
+  UNION ALL
+
+  SELECT
+    'cloud_credential' AS source,
+    NULL AS employee_id,
+    cc.user_name AS full_name,
+    NULL AS department,
+    cc.access_level AS account_or_app,
+    cc.access_level AS role_or_level,
+    GREATEST(cc.password_last_used, cc.access_key_last_used) AS last_used_at
+  FROM app_security.cloud_credentials cc
+  WHERE cc.access_level IN ('Admin', 'Root')
+    AND (
+      GREATEST(cc.password_last_used, cc.access_key_last_used) < NOW() - INTERVAL '{threshold_days} days'
+      OR GREATEST(cc.password_last_used, cc.access_key_last_used) IS NULL
+    )
+  ORDER BY last_used_at ASC NULLS FIRST
 remediation: >
   Downgrade or remove elevated privileges for accounts that have not exercised
   them within the dormancy window. Implement just-in-time (JIT) access for
