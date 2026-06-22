@@ -2,7 +2,7 @@ import datetime
 import logging
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import Connection
 
@@ -24,7 +24,7 @@ def run_all_audits(connection: Connection = Depends(get_connection)):
     rules = load_rules()
     if not rules:
         return {
-            "executed_at": datetime.datetime.utcnow().isoformat(),
+            "executed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "results": [],
             "message": "No rules found to execute."
         }
@@ -35,14 +35,14 @@ def run_all_audits(connection: Connection = Depends(get_connection)):
         results.append(res)
 
     return {
-        "executed_at": datetime.datetime.utcnow().isoformat(),
+        "executed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "results": results
     }
 
 @router.get("/report", response_class=HTMLResponse)
 def get_audit_report(
     request: Request,
-    format: str = Query("html", regex="^(html|json)$"),
+    format: str = Query("html", pattern="^(html|json)$"),
     connection: Connection = Depends(get_connection)
 ):
     """
@@ -61,13 +61,13 @@ def get_audit_report(
     narrative = generate_narrative(results)
 
     report_data = {
-        "executed_at": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "executed_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         "results": results,
         "narrative": narrative
     }
 
     if format == "json":
-        return report_data
+        return JSONResponse(content=report_data)
 
     # Return HTML response using Jinja2
     return templates.TemplateResponse(
@@ -93,6 +93,6 @@ def run_single_audit(rule_id: str, connection: Connection = Depends(get_connecti
 
     res = execute_rule(target_rule, connection)
     return {
-        "executed_at": datetime.datetime.utcnow().isoformat(),
+        "executed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "result": res
     }
