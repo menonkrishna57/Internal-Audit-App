@@ -10,3 +10,8 @@ Dockerfile
 .dockerignore
 uv.lock
 .python-version
+audit-dashboard/node_modules
+audit-dashboard/dist
+.pytest_cache
+.vscode
+

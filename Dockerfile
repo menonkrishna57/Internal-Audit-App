@@ -23,8 +23,8 @@ COPY requirements.txt .
 # Install dependencies (including uvicorn for serving FastAPI)
 RUN pip install --no-cache-dir -r requirements.txt uvicorn
 
-# Copy the rest of the application code
-COPY . .
+# Copy the backend application code
+COPY audit-tool/ ./audit-tool/
 
 # Copy the built frontend static files from the first stage
 COPY --from=frontend-build /app/audit-dashboard/dist /app/audit-dashboard/dist
