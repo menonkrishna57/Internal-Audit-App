@@ -31,6 +31,9 @@ app.include_router(audits.router, prefix="/audits")
 from sqlalchemy import text
 from app.db import get_engine
 
+import os
+from fastapi.staticfiles import StaticFiles
+
 @app.get("/health")
 def health_check():
     """Confirms the API engine is alive and checks DB connection."""
@@ -49,16 +52,21 @@ def health_check():
         "db_status": db_status
     }
 
-@app.get("/")
-def home():
-    """Welcome page redirect or metadata response."""
-    return {
-        "message": "Welcome to the Bank Operational Audit Tool API",
-        "docs_url": "/docs",
-        "endpoints": {
-            "health": "/health",
-            "run_audits": "/audits/run",
-            "audit_report": "/audits/report",
-            "single_audit": "/audits/{rule_id}"
+# Serve the frontend Dashboard
+dist_path = os.path.join(os.path.dirname(__file__), "..", "..", "audit-dashboard", "dist")
+if os.path.isdir(dist_path):
+    app.mount("/", StaticFiles(directory=dist_path, html=True), name="frontend")
+else:
+    @app.get("/")
+    def home():
+        return {
+            "message": "Welcome to the Bank Operational Audit Tool API",
+            "docs_url": "/docs",
+            "endpoints": {
+                "health": "/health",
+                "run_audits": "/audits/run",
+                "audit_report": "/audits/report",
+                "single_audit": "/audits/{rule_id}"
+            },
+            "note": "Frontend build not found. Run 'npm run build' in audit-dashboard."
         }
-    }
