@@ -12,6 +12,16 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(default="", validation_alias="GEMINI_API_KEY")
     gemini_model: str = Field(default="gemini-1.5-flash", validation_alias="GEMINI_MODEL")
 
+    # Qdrant vector database (local Docker)
+    qdrant_host: str = Field(default="localhost", validation_alias="QDRANT_HOST")
+    qdrant_port: int = Field(default=6333, validation_alias="QDRANT_PORT")
+    qdrant_collection: str = Field(default="policy_clauses", validation_alias="QDRANT_COLLECTION")
+
+    # Jina AI embeddings
+    jina_api_key: str = Field(default="", validation_alias="JINA_API_KEY")
+    jina_embedding_model: str = Field(default="jina-embeddings-v3", validation_alias="JINA_EMBEDDING_MODEL")
+    jina_embedding_dimensions: int = Field(default=1024, validation_alias="JINA_EMBEDDING_DIMENSIONS")
+
     @field_validator("supabase_db_url")
     @classmethod
     def validate_db_url(cls, v):

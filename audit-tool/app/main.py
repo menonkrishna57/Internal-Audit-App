@@ -2,6 +2,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import audits
+from app.routes import policies
 
 # Set up basic logging
 logging.basicConfig(
@@ -27,6 +28,7 @@ app.add_middleware(
 
 # Register routes
 app.include_router(audits.router, prefix="/audits")
+app.include_router(policies.router, prefix="/policies")
 
 from sqlalchemy import text
 from app.db import get_engine
