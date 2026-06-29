@@ -931,7 +931,9 @@ function PoliciesView() {
   const handleApprove = async (ruleId) => {
     try {
       const res = await fetch(`/policies/rules/draft/${ruleId}/approve`, { method: 'POST' })
-      if (res.ok) fetchDrafts()
+      if (res.ok) {
+        setDrafts(prev => prev.filter(d => d.id !== ruleId))
+      }
     } catch (e) {
       console.error(e)
     }
@@ -940,7 +942,9 @@ function PoliciesView() {
   const handleReject = async (ruleId) => {
     try {
       const res = await fetch(`/policies/rules/draft/${ruleId}/reject`, { method: 'DELETE' })
-      if (res.ok) fetchDrafts()
+      if (res.ok) {
+        setDrafts(prev => prev.filter(d => d.id !== ruleId))
+      }
     } catch (e) {
       console.error(e)
     }
