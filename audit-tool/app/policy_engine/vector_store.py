@@ -39,13 +39,8 @@ def get_qdrant_client() -> QdrantClient:
     """Return a cached Qdrant client, creating it on first call."""
     global _qdrant_client
     if _qdrant_client is None:
-        _qdrant_client = QdrantClient(
-            host=settings.qdrant_host,
-            port=settings.qdrant_port,
-        )
-        logger.info(
-            f"Connected to Qdrant at {settings.qdrant_host}:{settings.qdrant_port}"
-        )
+        _qdrant_client = QdrantClient(":memory:")
+        logger.info("Connected to Qdrant (in-memory mode)")
     return _qdrant_client
 
 
