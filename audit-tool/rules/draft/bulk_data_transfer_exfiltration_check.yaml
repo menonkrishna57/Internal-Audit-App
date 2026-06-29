@@ -1,0 +1,19 @@
+id: bulk_data_transfer_exfiltration_check
+title: "Bulk Data Transfer — Exceeding 5GB in 24 Hours"
+severity: critical
+bytes_threshold: 5368709120
+window_minutes: 1440
+query: |
+  SELECT
+    (payload->>'userIdentity')::TEXT AS user_identity,
+    SUM((payload->>'bytesTransferred')::BIGINT) AS total_bytes_transferred,
+    COUNT(event_id) AS event_count
+  FROM app_security.cloud_event_logs
+  WHERE event_timestamp >= NOW() - INTERVAL '{window_minutes} minutes'
+  GROUP BY user_identity
+  HAVING SUM((payload->>'bytesTransferred')::BIGINT) > {bytes_threshold}
+remediation: >
+  Immediately revoke cloud access for the identified user. Initiate an incident 
+  response investigation to determine the nature of the data transferred. 
+  Conduct a forensic review of the cloud event logs and notify the Data 
+  Protection Officer.

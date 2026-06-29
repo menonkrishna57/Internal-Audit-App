@@ -1,0 +1,20 @@
+id: unused_privileged_roles_check
+title: "Unused Privileged Roles"
+severity: high
+threshold_days: 60
+query: |
+  SELECT
+    ap.employee_id,
+    e.full_name,
+    ap.app_name,
+    ap.permission_name,
+    ap.last_used_at
+  FROM app_security.application_permissions ap
+  JOIN hr_schema.employees e ON ap.employee_id = e.id
+  WHERE ap.is_privileged = TRUE
+    AND (ap.last_used_at < NOW() - INTERVAL '{threshold_days} days' OR ap.last_used_at IS NULL)
+remediation: >
+  Revoke the identified privileged application permissions immediately. 
+  Verify if the role is still required for the employee's current job function. 
+  If access is required, perform a re-authorization process; otherwise, 
+  remove the permission to maintain the principle of least privilege.

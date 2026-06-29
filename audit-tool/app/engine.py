@@ -14,6 +14,10 @@ def get_rules_dir() -> Path:
         rules_dir = Path("rules").resolve()
     return rules_dir
 
+def get_draft_rules_dir() -> Path:
+    """Resolve the path to the draft rules directory (AI-generated, pending review)."""
+    return get_rules_dir() / "draft"
+
 def load_rules() -> list[dict]:
     """Loads and returns all YAML rules from the rules directory."""
     rules_dir = get_rules_dir()
@@ -36,6 +40,32 @@ def load_rules() -> list[dict]:
             logger.error(f"Error loading rule file {file_path}: {str(e)}")
             
     # Sort rules for consistent execution order
+    rules.sort(key=lambda x: x.get("id", ""))
+    return rules
+
+def load_draft_rules() -> list[dict]:
+    """
+    Loads all AI-generated draft YAML rules from rules/draft/.
+    These are NOT executed by the audit engine until promoted to rules/.
+    """
+    draft_dir = get_draft_rules_dir()
+    logger.info(f"Loading draft rules from {draft_dir}...")
+    rules = []
+
+    if not draft_dir.exists():
+        return rules
+
+    for file_path in draft_dir.glob("*.yaml"):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                rule_data = yaml.safe_load(f)
+                if isinstance(rule_data, dict) and "id" in rule_data:
+                    rule_data["_file_path"] = str(file_path)
+                    rule_data["_is_draft"] = True
+                    rules.append(rule_data)
+        except Exception as e:
+            logger.error(f"Error loading draft rule file {file_path}: {str(e)}")
+
     rules.sort(key=lambda x: x.get("id", ""))
     return rules
 

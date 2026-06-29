@@ -1,0 +1,25 @@
+id: account_inactivity_45_days
+title: "Account Inactivity — 45 Days"
+severity: high
+threshold_days: 45
+query: |
+  SELECT
+    e.id,
+    e.full_name,
+    e.department,
+    e.hr_status,
+    MAX(nl.login_timestamp) AS last_login_at
+  FROM hr_schema.employees e
+  LEFT JOIN app_security.network_logins nl
+    ON nl.employee_id = e.id
+    AND nl.status = 'Success'
+  WHERE e.hr_status = 'Active'
+  GROUP BY e.id, e.full_name, e.department, e.hr_status
+  HAVING MAX(nl.login_timestamp) < NOW() - INTERVAL '{threshold_days} days'
+     OR MAX(nl.login_timestamp) IS NULL
+  ORDER BY last_login_at ASC NULLS FIRST
+remediation: >
+  Identify active employees who have not logged in for 45 days. Disable or 
+  suspend their network accounts immediately to reduce the attack surface. 
+  Notify the HR department and the employee's manager to verify employment 
+  status and account necessity.

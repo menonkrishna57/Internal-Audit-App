@@ -1,0 +1,21 @@
+id: terminated_employee_access_violation
+title: "Terminated Employees — Unauthorized Network Access"
+severity: critical
+query: |
+  SELECT
+    nl.login_id,
+    nl.employee_id,
+    e.full_name,
+    nl.login_timestamp,
+    nl.ip_address
+  FROM app_security.network_logins nl
+  JOIN hr_schema.employees e ON nl.employee_id = e.id
+  WHERE e.hr_status = 'Terminated'
+    AND nl.status = 'Success'
+  ORDER BY nl.login_timestamp DESC
+remediation: >
+  Immediately disable the network account for the identified employee. 
+  Initiate an incident response procedure to investigate the unauthorized 
+  access, identify the source IP, and determine if any data exfiltration 
+  or unauthorized system changes occurred. Notify the HR department to 
+  verify termination status and ensure offboarding protocols were followed.

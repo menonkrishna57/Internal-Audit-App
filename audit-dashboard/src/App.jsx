@@ -24,6 +24,12 @@ const Icons = {
       <path d="M5 5h6M5 8h6M5 11h4"/>
     </svg>
   ),
+  Policies: () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M3 2v12h10V4l-2-2H3z"/>
+      <path d="M8 6h3M5 10h6"/>
+    </svg>
+  ),
   Settings: () => (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="8" cy="8" r="2"/>
@@ -74,6 +80,7 @@ const NAV_ITEMS = [
   { id: 'rules',     label: 'Rules',     Icon: Icons.Rules     },
   { id: 'findings',  label: 'Findings',  Icon: Icons.Findings  },
   { id: 'reports',   label: 'Reports',   Icon: Icons.Reports   },
+  { id: 'policies',  label: 'Policies',  Icon: Icons.Policies  },
   { id: 'settings',  label: 'Settings',  Icon: Icons.Settings  },
 ]
 
@@ -865,6 +872,138 @@ function ReportsView({ runId }) {
   )
 }
 
+// ── Policies view ─────────────────────────────────────────────────────────────
+function PoliciesView() {
+  const [file, setFile] = useState(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadResult, setUploadResult] = useState(null)
+  const [uploadError, setUploadError] = useState(null)
+
+  const [drafts, setDrafts] = useState([])
+  const [draftsLoading, setDraftsLoading] = useState(true)
+
+  const fetchDrafts = useCallback(async () => {
+    try {
+      const res = await fetch('/policies/rules/draft')
+      if (res.ok) {
+        const data = await res.json()
+        setDrafts(data.draft_rules || [])
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setDraftsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchDrafts()
+  }, [fetchDrafts])
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0])
+    setUploadResult(null)
+    setUploadError(null)
+  }
+
+  const handleUpload = async () => {
+    if (!file) return
+    setUploading(true)
+    setUploadError(null)
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const res = await fetch('/policies/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!res.ok) throw new Error('Upload failed')
+      const data = await res.json()
+      setUploadResult(data)
+      fetchDrafts()
+    } catch (err) {
+      setUploadError(err.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleApprove = async (ruleId) => {
+    try {
+      const res = await fetch(`/policies/rules/draft/${ruleId}/approve`, { method: 'POST' })
+      if (res.ok) fetchDrafts()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleReject = async (ruleId) => {
+    try {
+      const res = await fetch(`/policies/rules/draft/${ruleId}/reject`, { method: 'DELETE' })
+      if (res.ok) fetchDrafts()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  return (
+    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 900 }}>
+      <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#DCD3B8' }}>Policy Document Ingestion</h1>
+      
+      <div style={{ background: '#DCD3B8', padding: '24px', borderRadius: 6 }}>
+        <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', fontWeight: 600, color: '#211C16', marginBottom: 12 }}>Upload PDF Policy</h2>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <input type="file" accept=".pdf" onChange={handleFileChange} style={{ fontFamily: 'Inter, sans-serif', color: '#211C16' }} />
+          <RunButton onRun={handleUpload} loading={uploading} label="Ingest Policy" id="upload-policy-btn" />
+        </div>
+        
+        {uploadError && <div style={{ color: '#A23B2C', marginTop: 12, fontFamily: 'Inter, sans-serif' }}>Error: {uploadError}</div>}
+        
+        {uploadResult && (
+          <div style={{ marginTop: 24, background: 'rgba(255,255,255,0.5)', padding: 16, borderRadius: 4, color: '#211C16' }}>
+            <h3 style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, marginBottom: 8 }}>Ingestion Result for {uploadResult.source_pdf}</h3>
+            <ul style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', lineHeight: 1.6, paddingLeft: 20 }}>
+              <li>Total clauses parsed: {uploadResult.summary.total_clauses}</li>
+              <li>Existing rules updated: {uploadResult.summary.rules_updated}</li>
+              <li>Draft rules created: {uploadResult.summary.rules_created}</li>
+              <li>Clauses skipped (non-auditable): {uploadResult.summary.clauses_skipped}</li>
+            </ul>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.4rem', color: '#DCD3B8', marginBottom: 16 }}>Pending Draft Rules</h2>
+        {draftsLoading ? (
+          <p style={{ color: '#4a6070' }}>Loading drafts...</p>
+        ) : drafts.length === 0 ? (
+          <p style={{ color: '#4a6070', fontFamily: 'Inter, sans-serif' }}>No draft rules pending review.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {drafts.map(draft => (
+              <div key={draft.id} style={{ background: '#DCD3B8', padding: 16, borderRadius: 6, color: '#211C16' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42' }}>{draft.id}</div>
+                    <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', margin: '4px 0', fontWeight: 600 }}>{draft.title}</h3>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => handleReject(draft.id)} style={{ padding: '6px 12px', background: '#A23B2C', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600 }}>Deny</button>
+                    <button onClick={() => handleApprove(draft.id)} style={{ padding: '6px 12px', background: '#2e6b2f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600 }}>Approve</button>
+                  </div>
+                </div>
+                <pre style={{ background: 'rgba(0,0,0,0.05)', padding: 12, borderRadius: 4, fontSize: '0.8rem', overflowX: 'auto', margin: 0, border: '1px solid #c7be9f' }}>
+                  {JSON.stringify(draft, null, 2)}
+                </pre>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Settings view ──────────────────────────────────────────────────────────────
 function SettingsView() {
   const [config, setConfig] = useState({
@@ -1062,6 +1201,7 @@ export default function App() {
           {activeNav === 'rules'    && <RulesView results={results} />}
           {activeNav === 'findings' && <FindingsView results={results} />}
           {activeNav === 'reports'  && <ReportsView runId={runId} />}
+          {activeNav === 'policies' && <PoliciesView />}
           {activeNav === 'settings' && <SettingsView />}
         </div>
 
