@@ -64,7 +64,8 @@ html, body, #root {
   top: 16px;
   right: 16px;
 }
-.stamp-critical, .stamp-high { background-color: #A23B2C; color: #DCD3B8; }
+.stamp-critical { background-color: #A23B2C; color: #DCD3B8; }
+.stamp-high     { background-color: #D97706; color: #FFFFFF; }
 .stamp-medium, .stamp-low    { background-color: #B08F4F; color: #1E2C3A; }
 
 /* ── Tally underline ──────────────────────────────────────── */

@@ -1,5 +1,6 @@
 import datetime
 import logging
+import yaml
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -154,6 +155,54 @@ def delete_rule(rule_id: str):
         "status": "deleted",
         "rule_id": rule_id,
         "message": f"Rule '{rule_id}' has been permanently deleted.",
+    }
+
+
+@router.put("/rules/{rule_id}", summary="Update a live audit rule by its ID")
+async def update_rule(rule_id: str, request: Request):
+    """
+    Updates the YAML rule file for the given rule_id in the live rules directory.
+    """
+    rules = load_rules()
+    target_rule = next((r for r in rules if r.get("id") == rule_id), None)
+
+    if not target_rule:
+        raise HTTPException(status_code=404, detail=f"Rule with ID '{rule_id}' not found.")
+
+    try:
+        updated_data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+        
+    file_path = Path(target_rule["_file_path"])
+    
+    # Merge existing rule with updated data (preserving fields not sent, overriding sent fields)
+    # We load the existing file text to preserve structure if possible, but dumping dict is safer for arbitrary edits.
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            current_data = yaml.safe_load(f)
+    except Exception:
+        current_data = {}
+        
+    # Remove keys that were deleted by the user (ignore internal keys)
+    keys_to_remove = [k for k in current_data.keys() if not k.startswith('_') and k not in updated_data]
+    for k in keys_to_remove:
+        del current_data[k]
+        
+    current_data.update(updated_data)
+    
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            yaml.dump(current_data, f, default_flow_style=False, sort_keys=False)
+        logger.info(f"Rule '{rule_id}' updated: {file_path}")
+    except Exception as exc:
+        logger.error(f"Failed to update rule file '{file_path}': {exc}")
+        raise HTTPException(status_code=500, detail=f"Could not update rule file: {exc}")
+
+    return {
+        "status": "updated",
+        "rule_id": rule_id,
+        "message": f"Rule '{rule_id}' has been successfully updated.",
     }
 
 

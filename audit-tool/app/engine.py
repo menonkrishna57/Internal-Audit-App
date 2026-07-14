@@ -160,6 +160,7 @@ def execute_rule(rule: dict, connection: Connection) -> dict:
         "title": title,
         "severity": severity,
         "remediation": remediation,
+        "query_run": sql_to_run,
         "finding_count": finding_count,
         "findings": findings,
         "error": error_message

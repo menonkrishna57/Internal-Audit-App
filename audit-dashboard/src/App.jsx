@@ -48,7 +48,8 @@ const SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3 }
 
 function severityStampClass(sev) {
   const s = sev?.toLowerCase()
-  if (s === 'critical' || s === 'high') return 'stamp stamp-critical'
+  if (s === 'critical') return 'stamp stamp-critical'
+  if (s === 'high') return 'stamp stamp-high'
   return 'stamp stamp-medium'
 }
 
@@ -77,10 +78,10 @@ function makeRunId() {
 // ── NavRail ───────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', Icon: Icons.Dashboard },
+  { id: 'policies',  label: 'Policies',  Icon: Icons.Policies  },
   { id: 'rules',     label: 'Rules',     Icon: Icons.Rules     },
   { id: 'findings',  label: 'Findings',  Icon: Icons.Findings  },
   { id: 'reports',   label: 'Reports',   Icon: Icons.Reports   },
-  { id: 'policies',  label: 'Policies',  Icon: Icons.Policies  },
   { id: 'settings',  label: 'Settings',  Icon: Icons.Settings  },
 ]
 
@@ -210,7 +211,7 @@ function TallyStrip({ results }) {
 
   const items = [
     { key: 'critical', label: 'Critical', color: '#A23B2C' },
-    { key: 'high',     label: 'High',     color: '#A23B2C' },
+    { key: 'high',     label: 'High',     color: '#D97706' },
     { key: 'medium',   label: 'Medium',   color: '#B08F4F' },
     { key: 'low',      label: 'Low',      color: '#6b7f8c' },
   ]
@@ -270,7 +271,7 @@ function FindingTabs({ finding, rule }) {
   ]
 
   // Build a representive SQL from the rule title (real SQL unknown client-side)
-  const sqlSnippet = rule.query_hint
+  const sqlSnippet = rule.query_run ?? rule.query_hint
     ?? `-- Rule: ${rule.title}\n-- Run the audit to execute the live query against the database.\n-- Check /audits/${rule.rule_id} for the full execution result.`
 
   const narrative = finding?.narrative ?? rule.narrative ?? null
@@ -672,9 +673,138 @@ function Dashboard({ runId, env, results, loading, error, onRun, executedAt, hea
   )
 }
 
+// ── Rule Editor Modal ────────────────────────────────────────────────────────
+
+const Field = ({ label, required, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', fontWeight: 600, color: '#4a3d2c' }}>
+      {label}
+      {required && <span style={{ color: '#A23B2C', marginLeft: '4px' }}>*</span>}
+    </label>
+    {children}
+  </div>
+)
+
+function RuleEditorModal({ rule, onClose, onSave, loading }) {
+  const [formData, setFormData] = useState(() => {
+    const cleanRule = { ...rule }
+    delete cleanRule._filename
+    delete cleanRule._file_path
+    delete cleanRule._is_draft
+    delete cleanRule.rule_id
+    delete cleanRule.finding_count
+    delete cleanRule.findings
+    delete cleanRule.error
+    delete cleanRule.query_run
+    
+    // Extract standard fields
+    const { id, title, severity, remediation, query, narrative, ...rest } = cleanRule
+    
+    return {
+      id: id || '',
+      title: title || '',
+      severity: severity || 'medium',
+      remediation: remediation || '',
+      query: query || '',
+      narrative: narrative || '',
+      advanced: Object.keys(rest).length > 0 ? JSON.stringify(rest, null, 2) : ''
+    }
+  })
+  
+  const [error, setError] = useState(null)
+
+  const handleChange = (key, value) => {
+    setFormData(prev => ({ ...prev, [key]: value }))
+    setError(null)
+  }
+
+  const handleSave = () => {
+    try {
+      let parsedAdvanced = {}
+      if (formData.advanced.trim()) {
+        parsedAdvanced = JSON.parse(formData.advanced)
+      }
+      
+      const finalRule = {
+        id: formData.id,
+        title: formData.title,
+        severity: formData.severity,
+        query: formData.query,
+        ...parsedAdvanced
+      }
+      
+      if (formData.remediation) finalRule.remediation = formData.remediation
+      if (formData.narrative) finalRule.narrative = formData.narrative
+      
+      onSave(finalRule)
+    } catch (err) {
+      setError("Invalid JSON in Advanced Parameters: " + err.message)
+    }
+  }
+
+  const inputStyle = { width: '100%', padding: '10px', borderRadius: 4, border: '1px solid #c7be9f', fontFamily: 'Inter, sans-serif', backgroundColor: '#fff', color: '#211C16' }
+  const textareaStyle = { ...inputStyle, resize: 'vertical', minHeight: '80px', fontSize: '0.85rem' }
+  const codeStyle = { ...textareaStyle, fontFamily: 'JetBrains Mono, monospace' }
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: '#DCD3B8', padding: '28px', borderRadius: 8, width: '800px', maxWidth: '90%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', gap: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+        <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.6rem', color: '#211C16', margin: 0 }}>Edit Rule Metadata</h2>
+        
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '12px' }}>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <Field label="Rule ID" required>
+              <input style={inputStyle} value={formData.id} onChange={e => handleChange('id', e.target.value)} disabled={loading} />
+            </Field>
+            <Field label="Severity" required>
+              <select style={inputStyle} value={formData.severity} onChange={e => handleChange('severity', e.target.value)} disabled={loading}>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </Field>
+          </div>
+
+          <Field label="Title" required>
+            <input style={inputStyle} value={formData.title} onChange={e => handleChange('title', e.target.value)} disabled={loading} />
+          </Field>
+
+          <Field label="Remediation">
+            <textarea style={textareaStyle} value={formData.remediation} onChange={e => handleChange('remediation', e.target.value)} disabled={loading} />
+          </Field>
+          
+          <Field label="Narrative (AI Prompt/Context)">
+            <textarea style={textareaStyle} value={formData.narrative} onChange={e => handleChange('narrative', e.target.value)} disabled={loading} placeholder="Optional context for the AI summary..." />
+          </Field>
+
+          <Field label="SQL Query" required>
+            <textarea style={{...codeStyle, minHeight: '200px'}} value={formData.query} onChange={e => handleChange('query', e.target.value)} disabled={loading} />
+          </Field>
+
+          <Field label="Advanced Parameters (JSON)">
+            <textarea style={codeStyle} value={formData.advanced} onChange={e => handleChange('advanced', e.target.value)} disabled={loading} placeholder={'{\n  "threshold_days": 30\n}'} />
+          </Field>
+          
+        </div>
+
+        {error && <div style={{ color: '#A23B2C', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem' }}>{error}</div>}
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+          <button onClick={onClose} disabled={loading} style={{ padding: '10px 20px', border: '1px solid #c7be9f', background: 'transparent', color: '#211C16', borderRadius: 4, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>Cancel</button>
+          <button onClick={handleSave} disabled={loading} style={{ padding: '10px 20px', background: '#211C16', color: '#DCD3B8', border: 'none', borderRadius: 4, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>{loading ? 'Saving...' : 'Save Rule'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Rules view ─────────────────────────────────────────────────────────────────
-function RulesView({ results, onDeleteRule }) {
+function RulesView({ results, onDeleteRule, onRuleUpdated }) {
   const [deletingId, setDeletingId] = useState(null)
+  const [editingRule, setEditingRule] = useState(null)
+  const [savingId, setSavingId] = useState(null)
 
   const handleDelete = async (ruleId, ruleTitle) => {
     if (!window.confirm(`Delete rule "${ruleTitle}"?\n\nThis will permanently remove the rule file. It will no longer run in future audits.`)) return
@@ -691,6 +821,28 @@ function RulesView({ results, onDeleteRule }) {
       alert(`Network error: ${e.message}`)
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const handleSave = async (updatedData) => {
+    setSavingId(editingRule.rule_id)
+    try {
+      const res = await fetch(`/audits/rules/${editingRule.rule_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Unknown error' }))
+        alert(`Failed to update rule: ${err.detail ?? 'Unknown error'}`)
+      } else {
+        setEditingRule(null)
+        if (onRuleUpdated) onRuleUpdated() // refresh results
+      }
+    } catch (e) {
+      alert(`Network error: ${e.message}`)
+    } finally {
+      setSavingId(null)
     }
   }
 
@@ -723,7 +875,26 @@ function RulesView({ results, onDeleteRule }) {
                 <td style={{ fontFamily: 'Inter, sans-serif', fontWeight: 500 }}>{r.title}</td>
                 <td><span className={severityStampClass(r.severity)}>{severityLabel(r.severity)}</span></td>
                 <td style={{ fontSize: '0.7rem' }}>{r.remediation || '-'}</td>
-                <td style={{ textAlign: 'center' }}>
+                <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                  <button
+                    onClick={() => setEditingRule(r)}
+                    disabled={deletingId === r.rule_id}
+                    title="Edit metadata"
+                    style={{
+                      padding: '4px 10px',
+                      background: '#B08F4F',
+                      color: '#211C16',
+                      border: 'none',
+                      borderRadius: 4,
+                      cursor: deletingId === r.rule_id ? 'not-allowed' : 'pointer',
+                      fontFamily: 'Inter, sans-serif',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      marginRight: 6
+                    }}
+                  >
+                    Edit
+                  </button>
                   <button
                     id={`delete-rule-${r.rule_id}`}
                     onClick={() => handleDelete(r.rule_id, r.title)}
@@ -750,6 +921,14 @@ function RulesView({ results, onDeleteRule }) {
           </tbody>
         </table>
       </div>
+      {editingRule && (
+        <RuleEditorModal 
+          rule={editingRule} 
+          onClose={() => setEditingRule(null)} 
+          onSave={handleSave} 
+          loading={savingId === editingRule.rule_id} 
+        />
+      )}
     </div>
   )
 }
@@ -852,7 +1031,7 @@ function ReportsView({ runId }) {
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>No anomalies detected in this run.</p>
             ) : (
               report.results.filter(r => r.finding_count > 0).map(rule => (
-                <div key={rule.rule_id} style={{ pageBreakInside: 'avoid', background: 'rgba(255,255,255,0.4)', padding: 16, borderRadius: 4, borderLeft: `4px solid ${rule.severity === 'critical' || rule.severity === 'high' ? '#A23B2C' : '#B08F4F'}` }}>
+                <div key={rule.rule_id} style={{ pageBreakInside: 'avoid', background: 'rgba(255,255,255,0.4)', padding: 16, borderRadius: 4, borderLeft: `4px solid ${rule.severity === 'critical' ? '#A23B2C' : rule.severity === 'high' ? '#D97706' : '#B08F4F'}` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <div>
                       <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42' }}>{rule.rule_id}</div>
@@ -924,6 +1103,8 @@ function PoliciesView() {
 
   const [drafts, setDrafts] = useState([])
   const [draftsLoading, setDraftsLoading] = useState(true)
+  const [editingRule, setEditingRule] = useState(null)
+  const [savingId, setSavingId] = useState(null)
 
   const fetchDrafts = useCallback(async () => {
     try {
@@ -993,6 +1174,28 @@ function PoliciesView() {
     }
   }
 
+  const handleSaveDraft = async (updatedData) => {
+    setSavingId(editingRule.id)
+    try {
+      const res = await fetch(`/policies/rules/draft/${editingRule.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Unknown error' }))
+        alert(`Failed to update draft: ${err.detail ?? 'Unknown error'}`)
+      } else {
+        setEditingRule(null)
+        fetchDrafts()
+      }
+    } catch (e) {
+      alert(`Network error: ${e.message}`)
+    } finally {
+      setSavingId(null)
+    }
+  }
+
   return (
     <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 900 }}>
       <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#DCD3B8' }}>Policy Document Ingestion</h1>
@@ -1035,6 +1238,7 @@ function PoliciesView() {
                     <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', margin: '4px 0', fontWeight: 600 }}>{draft.title}</h3>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => setEditingRule(draft)} style={{ padding: '6px 12px', background: '#B08F4F', color: '#211C16', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600 }}>Edit</button>
                     <button onClick={() => handleReject(draft.id)} style={{ padding: '6px 12px', background: '#A23B2C', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600 }}>Deny</button>
                     <button onClick={() => handleApprove(draft.id)} style={{ padding: '6px 12px', background: '#2e6b2f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600 }}>Approve</button>
                   </div>
@@ -1047,6 +1251,14 @@ function PoliciesView() {
           </div>
         )}
       </div>
+      {editingRule && (
+        <RuleEditorModal
+          rule={editingRule}
+          onClose={() => setEditingRule(null)}
+          onSave={handleSaveDraft}
+          loading={savingId === editingRule.id}
+        />
+      )}
     </div>
   )
 }

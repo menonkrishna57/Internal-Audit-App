@@ -33,8 +33,9 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile, Request
 from fastapi.responses import JSONResponse
+import yaml
 
 from app.engine import get_rules_dir, load_draft_rules
 from app.policy_engine.orchestrator import process_policy_pdf
@@ -221,6 +222,52 @@ def list_draft_rules():
         r["_filename"] = Path(rule["_file_path"]).name
         clean.append(r)
     return {"count": len(clean), "draft_rules": clean}
+
+
+@router.put("/rules/draft/{rule_id}", summary="Update a draft rule by its ID")
+async def update_draft_rule(rule_id: str, request: Request):
+    drafts = load_draft_rules()
+    target = next((r for r in drafts if r.get("id") == rule_id), None)
+
+    if not target:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Draft rule with id '{rule_id}' not found.",
+        )
+
+    try:
+        updated_data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    file_path = Path(target["_file_path"])
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            current_data = yaml.safe_load(f)
+    except Exception:
+        current_data = {}
+
+    # Remove keys that were deleted by the user (ignore internal keys)
+    keys_to_remove = [k for k in current_data.keys() if not k.startswith('_') and k not in updated_data]
+    for k in keys_to_remove:
+        del current_data[k]
+
+    current_data.update(updated_data)
+
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            yaml.dump(current_data, f, default_flow_style=False, sort_keys=False)
+        logger.info(f"Draft rule '{rule_id}' updated: {file_path}")
+    except Exception as exc:
+        logger.error(f"Failed to update draft rule file '{file_path}': {exc}")
+        raise HTTPException(status_code=500, detail=f"Could not update draft rule file: {exc}")
+
+    return {
+        "status": "updated",
+        "rule_id": rule_id,
+        "message": f"Draft rule '{rule_id}' has been successfully updated.",
+    }
 
 
 @router.post(
