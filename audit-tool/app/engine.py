@@ -155,13 +155,24 @@ def execute_rule(rule: dict, connection: Connection) -> dict:
         error_message = str(e)
         logger.error(f"Error executing rule {rule_id}: {error_message}")
         
-    return {
+    result_dict = rule.copy()
+    
+    # Strip internal server-side keys before sending to frontend
+    keys_to_remove = [k for k in result_dict.keys() if k.startswith('_')]
+    for k in keys_to_remove:
+        del result_dict[k]
+        
+    result_dict.update({
         "rule_id": rule_id,
-        "title": title,
-        "severity": severity,
-        "remediation": remediation,
         "query_run": sql_to_run,
         "finding_count": finding_count,
         "findings": findings,
         "error": error_message
-    }
+    })
+    
+    # Ensure fallback values for UI
+    result_dict.setdefault("title", rule_id)
+    result_dict.setdefault("severity", severity)
+    result_dict.setdefault("remediation", remediation)
+    
+    return result_dict

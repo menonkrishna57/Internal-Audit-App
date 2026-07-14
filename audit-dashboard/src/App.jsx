@@ -751,7 +751,7 @@ function RuleEditorModal({ rule, onClose, onSave, loading }) {
       <div style={{ background: '#DCD3B8', padding: '28px', borderRadius: 8, width: '800px', maxWidth: '90%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', gap: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
         <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.6rem', color: '#211C16', margin: 0 }}>Edit Rule Metadata</h2>
         
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '12px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', padding: '4px 12px 4px 4px' }}>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <Field label="Rule ID" required>
@@ -855,72 +855,68 @@ function RulesView({ results, onDeleteRule, onRuleUpdated }) {
     )
   }
   return (
-    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#DCD3B8' }}>Configured Rules</h1>
-      <div style={{ overflowX: 'auto', background: '#DCD3B8', borderRadius: 6, padding: '16px' }}>
-        <table className="raw-table">
-          <thead>
-            <tr>
-              <th>Rule ID</th>
-              <th>Title</th>
-              <th>Severity</th>
-              <th>Remediation</th>
-              <th style={{ width: 80, textAlign: 'center' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map(r => (
-              <tr key={r.rule_id}>
-                <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{r.rule_id}</td>
-                <td style={{ fontFamily: 'Inter, sans-serif', fontWeight: 500 }}>{r.title}</td>
-                <td><span className={severityStampClass(r.severity)}>{severityLabel(r.severity)}</span></td>
-                <td style={{ fontSize: '0.7rem' }}>{r.remediation || '-'}</td>
-                <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
-                  <button
-                    onClick={() => setEditingRule(r)}
-                    disabled={deletingId === r.rule_id}
-                    title="Edit metadata"
-                    style={{
-                      padding: '4px 10px',
-                      background: '#B08F4F',
-                      color: '#211C16',
-                      border: 'none',
-                      borderRadius: 4,
-                      cursor: deletingId === r.rule_id ? 'not-allowed' : 'pointer',
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                      marginRight: 6
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    id={`delete-rule-${r.rule_id}`}
-                    onClick={() => handleDelete(r.rule_id, r.title)}
-                    disabled={deletingId === r.rule_id}
-                    title="Delete this rule"
-                    style={{
-                      padding: '4px 10px',
-                      background: deletingId === r.rule_id ? '#7a3020' : '#A23B2C',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 4,
-                      cursor: deletingId === r.rule_id ? 'not-allowed' : 'pointer',
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                      transition: 'background 0.15s',
-                    }}
-                  >
-                    {deletingId === r.rule_id ? '…' : 'Delete'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1200 }}>
+      <div>
+        <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.8rem', color: '#DCD3B8', margin: 0 }}>Configured Rules</h1>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#a0aab2', margin: '4px 0 0 0' }}>Manage the active audit rules currently enforced.</p>
       </div>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+        {results.map(r => (
+          <div key={r.rule_id} style={{
+            background: '#DCD3B8',
+            borderRadius: 8,
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42', textTransform: 'uppercase' }}>{r.rule_id}</span>
+                <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', fontWeight: 600, color: '#211C16', margin: 0 }}>{r.title}</h3>
+              </div>
+              <span className={severityStampClass(r.severity)} style={{ flexShrink: 0 }}>{severityLabel(r.severity)}</span>
+            </div>
+            
+            <div style={{ flex: 1, marginTop: '8px' }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', color: '#5a4c3c', margin: 0, lineHeight: 1.5 }}>
+                {r.remediation ? (
+                   <><strong>Remediation:</strong> {r.remediation}</>
+                ) : (
+                   <span style={{ fontStyle: 'italic', color: '#8c7a6b' }}>No remediation provided.</span>
+                )}
+              </p>
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+              <button
+                onClick={() => setEditingRule(r)}
+                disabled={deletingId === r.rule_id}
+                title="Edit metadata"
+                style={{
+                  padding: '6px 16px', background: '#B08F4F', color: '#211C16', border: 'none', borderRadius: 4, cursor: deletingId === r.rule_id ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600
+                }}
+              >
+                Edit
+              </button>
+              <button
+                id={`delete-rule-${r.rule_id}`}
+                onClick={() => handleDelete(r.rule_id, r.title)}
+                disabled={deletingId === r.rule_id}
+                title="Delete this rule"
+                style={{
+                  padding: '6px 16px', background: deletingId === r.rule_id ? '#7a3020' : '#A23B2C', color: '#fff', border: 'none', borderRadius: 4, cursor: deletingId === r.rule_id ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600
+                }}
+              >
+                {deletingId === r.rule_id ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {editingRule && (
         <RuleEditorModal 
           rule={editingRule} 
