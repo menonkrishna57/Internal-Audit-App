@@ -162,6 +162,7 @@ function BottomNav({ active, setActive }) {
     <nav
       className="bottom-nav"
       style={{
+        display: 'flex',
         position: 'fixed',
         bottom: 0,
         left: 0,
@@ -217,16 +218,7 @@ function TallyStrip({ results }) {
   ]
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '0 24px',
-        padding: '20px 32px',
-        borderBottom: '1px solid #1E2C3A',
-      }}
-      className="sm:grid-cols-4 grid-cols-2"
-    >
+    <div className="tally-grid">
       {items.map(({ key, label, color }) => (
         <div key={key} style={{ minWidth: 60 }}>
           <div
@@ -747,24 +739,28 @@ function RuleEditorModal({ rule, onClose, onSave, loading }) {
   const codeStyle = { ...textareaStyle, fontFamily: 'JetBrains Mono, monospace' }
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: '#DCD3B8', padding: '28px', borderRadius: 8, width: '800px', maxWidth: '90%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', gap: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
-        <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.6rem', color: '#211C16', margin: 0 }}>Edit Rule Metadata</h2>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ background: '#DCD3B8', padding: '28px', borderRadius: 8, width: '800px', maxWidth: '100%', maxHeight: '100%', display: 'flex', flexDirection: 'column', gap: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', boxSizing: 'border-box', overflow: 'hidden' }}>
+        <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.6rem', color: '#211C16', margin: 0, flexShrink: 0 }}>Edit Rule Metadata</h2>
         
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', padding: '4px 12px 4px 4px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', padding: '4px 12px 4px 4px', minHeight: 0 }}>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <Field label="Rule ID" required>
-              <input style={inputStyle} value={formData.id} onChange={e => handleChange('id', e.target.value)} disabled={loading} />
-            </Field>
-            <Field label="Severity" required>
-              <select style={inputStyle} value={formData.severity} onChange={e => handleChange('severity', e.target.value)} disabled={loading}>
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </Field>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+            <div style={{ flex: '1 1 250px' }}>
+              <Field label="Rule ID" required>
+                <input style={inputStyle} value={formData.id} onChange={e => handleChange('id', e.target.value)} disabled={loading} />
+              </Field>
+            </div>
+            <div style={{ flex: '1 1 250px' }}>
+              <Field label="Severity" required>
+                <select style={inputStyle} value={formData.severity} onChange={e => handleChange('severity', e.target.value)} disabled={loading}>
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </Field>
+            </div>
           </div>
 
           <Field label="Title" required>
@@ -789,9 +785,9 @@ function RuleEditorModal({ rule, onClose, onSave, loading }) {
           
         </div>
 
-        {error && <div style={{ color: '#A23B2C', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem' }}>{error}</div>}
+        {error && <div style={{ color: '#A23B2C', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', flexShrink: 0 }}>{error}</div>}
         
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', flexShrink: 0 }}>
           <button onClick={onClose} disabled={loading} style={{ padding: '10px 20px', border: '1px solid #c7be9f', background: 'transparent', color: '#211C16', borderRadius: 4, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>Cancel</button>
           <button onClick={handleSave} disabled={loading} style={{ padding: '10px 20px', background: '#211C16', color: '#DCD3B8', border: 'none', borderRadius: 4, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>{loading ? 'Saving...' : 'Save Rule'}</button>
         </div>
@@ -1192,13 +1188,13 @@ function PoliciesView() {
   }
 
   return (
-    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 900 }}>
+    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: '900px', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
       <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#DCD3B8' }}>Policy Document Ingestion</h1>
       
-      <div style={{ background: '#DCD3B8', padding: '24px', borderRadius: 6 }}>
+      <div style={{ background: '#DCD3B8', padding: '24px', borderRadius: 6, width: '100%', boxSizing: 'border-box' }}>
         <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', fontWeight: 600, color: '#211C16', marginBottom: 12 }}>Upload PDF Policy</h2>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <input type="file" accept=".pdf" onChange={handleFileChange} style={{ fontFamily: 'Inter, sans-serif', color: '#211C16' }} />
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <input type="file" accept=".pdf" onChange={handleFileChange} style={{ fontFamily: 'Inter, sans-serif', color: '#211C16', maxWidth: '100%' }} />
           <RunButton onRun={handleUpload} loading={uploading} label="Ingest Policy" id="upload-policy-btn" />
         </div>
         
@@ -1217,28 +1213,28 @@ function PoliciesView() {
         )}
       </div>
 
-      <div style={{ marginTop: 16 }}>
+      <div style={{ marginTop: 16, width: '100%', boxSizing: 'border-box' }}>
         <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.4rem', color: '#DCD3B8', marginBottom: 16 }}>Pending Draft Rules</h2>
         {draftsLoading ? (
           <p style={{ color: '#4a6070' }}>Loading drafts...</p>
         ) : drafts.length === 0 ? (
           <p style={{ color: '#4a6070', fontFamily: 'Inter, sans-serif' }}>No draft rules pending review.</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', boxSizing: 'border-box' }}>
             {drafts.map(draft => (
-              <div key={draft.id} style={{ background: '#DCD3B8', padding: 16, borderRadius: 6, color: '#211C16' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <div>
-                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42' }}>{draft.id}</div>
-                    <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', margin: '4px 0', fontWeight: 600 }}>{draft.title}</h3>
+              <div key={draft.id} style={{ background: '#DCD3B8', padding: 16, borderRadius: 6, color: '#211C16', width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42', wordBreak: 'break-all' }}>{draft.id}</div>
+                    <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', margin: '4px 0', fontWeight: 600, wordBreak: 'break-word' }}>{draft.title}</h3>
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <button onClick={() => setEditingRule(draft)} style={{ padding: '6px 12px', background: '#B08F4F', color: '#211C16', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600 }}>Edit</button>
                     <button onClick={() => handleReject(draft.id)} style={{ padding: '6px 12px', background: '#A23B2C', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600 }}>Deny</button>
                     <button onClick={() => handleApprove(draft.id)} style={{ padding: '6px 12px', background: '#2e6b2f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600 }}>Approve</button>
                   </div>
                 </div>
-                <pre style={{ background: 'rgba(0,0,0,0.05)', padding: 12, borderRadius: 4, fontSize: '0.8rem', overflowX: 'auto', margin: 0, border: '1px solid #c7be9f' }}>
+                <pre style={{ background: 'rgba(0,0,0,0.05)', padding: 12, borderRadius: 4, fontSize: '0.8rem', margin: 0, border: '1px solid #c7be9f', width: '100%', boxSizing: 'border-box', overflowX: 'auto', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
                   {JSON.stringify(draft, null, 2)}
                 </pre>
               </div>
@@ -1431,9 +1427,8 @@ export default function App() {
 
         {/* Main scrollable content area (offset by nav width on desktop) */}
         <div
-          className="main-area"
+          className="main-content"
           style={{
-            marginLeft: 220,
             flex: 1,
             minHeight: '100vh',
             display: 'flex',
