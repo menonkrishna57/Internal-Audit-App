@@ -673,7 +673,27 @@ function Dashboard({ runId, env, results, loading, error, onRun, executedAt, hea
 }
 
 // ── Rules view ─────────────────────────────────────────────────────────────────
-function RulesView({ results }) {
+function RulesView({ results, onDeleteRule }) {
+  const [deletingId, setDeletingId] = useState(null)
+
+  const handleDelete = async (ruleId, ruleTitle) => {
+    if (!window.confirm(`Delete rule "${ruleTitle}"?\n\nThis will permanently remove the rule file. It will no longer run in future audits.`)) return
+    setDeletingId(ruleId)
+    try {
+      const res = await fetch(`/audits/rules/${ruleId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Unknown error' }))
+        alert(`Failed to delete rule: ${err.detail ?? 'Unknown error'}`)
+      } else {
+        onDeleteRule(ruleId)
+      }
+    } catch (e) {
+      alert(`Network error: ${e.message}`)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   if (results.length === 0) {
     return (
       <div style={{ padding: '48px', textAlign: 'center' }}>
@@ -693,6 +713,7 @@ function RulesView({ results }) {
               <th>Title</th>
               <th>Severity</th>
               <th>Remediation</th>
+              <th style={{ width: 80, textAlign: 'center' }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -702,6 +723,28 @@ function RulesView({ results }) {
                 <td style={{ fontFamily: 'Inter, sans-serif', fontWeight: 500 }}>{r.title}</td>
                 <td><span className={severityStampClass(r.severity)}>{severityLabel(r.severity)}</span></td>
                 <td style={{ fontSize: '0.7rem' }}>{r.remediation || '-'}</td>
+                <td style={{ textAlign: 'center' }}>
+                  <button
+                    id={`delete-rule-${r.rule_id}`}
+                    onClick={() => handleDelete(r.rule_id, r.title)}
+                    disabled={deletingId === r.rule_id}
+                    title="Delete this rule"
+                    style={{
+                      padding: '4px 10px',
+                      background: deletingId === r.rule_id ? '#7a3020' : '#A23B2C',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 4,
+                      cursor: deletingId === r.rule_id ? 'not-allowed' : 'pointer',
+                      fontFamily: 'Inter, sans-serif',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    {deletingId === r.rule_id ? '…' : 'Delete'}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -1180,7 +1223,8 @@ export default function App() {
         <NavRail active={activeNav} setActive={setActiveNav} />
 
         {/* Main scrollable content area (offset by nav width on desktop) */}
-        <div className="main-content"
+        <div
+          className="main-area"
           style={{
             marginLeft: 220,
             flex: 1,
@@ -1188,7 +1232,6 @@ export default function App() {
             display: 'flex',
             flexDirection: 'column',
           }}
-          className="main-area"
         >
           {activeNav === 'dashboard' && (
             <Dashboard
@@ -1202,7 +1245,7 @@ export default function App() {
               health={health}
             />
           )}
-          {activeNav === 'rules'    && <RulesView results={results} />}
+          {activeNav === 'rules'    && <RulesView results={results} onDeleteRule={(ruleId) => setResults(prev => prev.filter(r => r.rule_id !== ruleId))} />}
           {activeNav === 'findings' && <FindingsView results={results} />}
           {activeNav === 'reports'  && <ReportsView runId={runId} />}
           {activeNav === 'policies' && <PoliciesView />}

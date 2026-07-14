@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy import Connection
 
 from app.db import get_connection
-from app.engine import load_rules, execute_rule
+from app.engine import load_rules, execute_rule, get_rules_dir
 from app.narrator import generate_narrative
 from app.config import settings
 
@@ -128,6 +128,34 @@ def update_system_settings(update: SettingsUpdate):
             f.writelines(lines)
             
     return {"status": "success"}
+
+@router.delete("/rules/{rule_id}", summary="Delete a live audit rule by its ID")
+def delete_rule(rule_id: str):
+    """
+    Permanently deletes the YAML rule file for the given rule_id from the
+    live rules directory. This rule will no longer be evaluated on subsequent
+    audit runs.
+    """
+    rules = load_rules()
+    target_rule = next((r for r in rules if r.get("id") == rule_id), None)
+
+    if not target_rule:
+        raise HTTPException(status_code=404, detail=f"Rule with ID '{rule_id}' not found.")
+
+    file_path = Path(target_rule["_file_path"])
+    try:
+        file_path.unlink()
+        logger.info(f"Rule '{rule_id}' deleted: {file_path}")
+    except Exception as exc:
+        logger.error(f"Failed to delete rule file '{file_path}': {exc}")
+        raise HTTPException(status_code=500, detail=f"Could not delete rule file: {exc}")
+
+    return {
+        "status": "deleted",
+        "rule_id": rule_id,
+        "message": f"Rule '{rule_id}' has been permanently deleted.",
+    }
+
 
 @router.get("/{rule_id}")
 def run_single_audit(rule_id: str, connection: Connection = Depends(get_connection)):
