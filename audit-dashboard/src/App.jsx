@@ -975,7 +975,6 @@ function ReportsView({ runId }) {
   }
 
   const downloadPdf = () => {
-    // Native print dialog ensures vectors, selectable text, and proper pagination
     window.print();
   }
 
@@ -989,8 +988,8 @@ function ReportsView({ runId }) {
               padding: '9px 20px', background: 'transparent', color: '#DCD3B8', 
               border: '1px solid #DCD3B8', borderRadius: 4, cursor: 'pointer',
               fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', fontWeight: 600
-            }}>
-              Download PDF
+            }} title="Use browser print to save as PDF with selectable text">
+              Save as PDF
             </button>
           )}
           <RunButton onRun={generateReport} loading={loading} id="generate-report-btn" label="Generate Narrative" />
