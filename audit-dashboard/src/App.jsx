@@ -690,7 +690,7 @@ function RuleEditorModal({ rule, onClose, onSave, loading }) {
     delete cleanRule.query_run
     
     // Extract standard fields
-    const { id, title, severity, remediation, query, narrative, ...rest } = cleanRule
+    const { id, title, severity, remediation, query, narrative, isNew, ...rest } = cleanRule
     
     return {
       id: id || '',
@@ -748,7 +748,7 @@ function RuleEditorModal({ rule, onClose, onSave, loading }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
             <div style={{ flex: '1 1 250px' }}>
               <Field label="Rule ID" required>
-                <input style={inputStyle} value={formData.id} onChange={e => handleChange('id', e.target.value)} disabled={loading} />
+                <input style={inputStyle} value={formData.id} onChange={e => handleChange('id', e.target.value)} disabled={loading || !rule.isNew} />
               </Field>
             </div>
             <div style={{ flex: '1 1 250px' }}>
@@ -821,16 +821,19 @@ function RulesView({ results, onDeleteRule, onRuleUpdated }) {
   }
 
   const handleSave = async (updatedData) => {
-    setSavingId(editingRule.rule_id)
+    const isNew = editingRule.isNew
+    setSavingId(isNew ? 'new' : editingRule.rule_id)
     try {
-      const res = await fetch(`/audits/rules/${editingRule.rule_id}`, {
-        method: 'PUT',
+      const endpoint = isNew ? '/audits/rules' : `/audits/rules/${editingRule.rule_id}`
+      const method = isNew ? 'POST' : 'PUT'
+      const res = await fetch(endpoint, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedData)
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'Unknown error' }))
-        alert(`Failed to update rule: ${err.detail ?? 'Unknown error'}`)
+        alert(`Failed to save rule: ${err.detail ?? 'Unknown error'}`)
       } else {
         setEditingRule(null)
         if (onRuleUpdated) onRuleUpdated() // refresh results
@@ -847,14 +850,28 @@ function RulesView({ results, onDeleteRule, onRuleUpdated }) {
       <div style={{ padding: '48px', textAlign: 'center' }}>
         <p style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#4a6070' }}>No rules loaded</p>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.88rem', color: '#2f4455', marginTop: 12 }}>Run an audit to discover configured rules.</p>
+        <button 
+          onClick={() => setEditingRule({ isNew: true, id: '', title: '', severity: 'medium', query: '', remediation: '', narrative: '' })}
+          style={{ marginTop: 24, padding: '8px 16px', background: '#2e6b2f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', fontWeight: 600 }}
+        >
+          + Create Rule
+        </button>
       </div>
     )
   }
   return (
     <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1200 }}>
-      <div>
-        <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.8rem', color: '#DCD3B8', margin: 0 }}>Configured Rules</h1>
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#a0aab2', margin: '4px 0 0 0' }}>Manage the active audit rules currently enforced.</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.8rem', color: '#DCD3B8', margin: 0 }}>Configured Rules</h1>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', color: '#a0aab2', margin: '4px 0 0 0' }}>Manage the active audit rules currently enforced.</p>
+        </div>
+        <button 
+          onClick={() => setEditingRule({ isNew: true, id: '', title: '', severity: 'medium', query: '', remediation: '', narrative: '' })}
+          style={{ padding: '8px 16px', background: '#2e6b2f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', fontWeight: 600 }}
+        >
+          + Create Rule
+        </button>
       </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
@@ -1447,7 +1464,7 @@ export default function App() {
               health={health}
             />
           )}
-          {activeNav === 'rules'    && <RulesView results={results} onDeleteRule={(ruleId) => setResults(prev => prev.filter(r => r.rule_id !== ruleId))} />}
+          {activeNav === 'rules'    && <RulesView results={results} onDeleteRule={(ruleId) => setResults(prev => prev.filter(r => r.rule_id !== ruleId))} onRuleUpdated={runAudit} />}
           {activeNav === 'findings' && <FindingsView results={results} />}
           {activeNav === 'reports'  && <ReportsView runId={runId} />}
           {activeNav === 'policies' && <PoliciesView />}

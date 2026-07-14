@@ -206,6 +206,48 @@ async def update_rule(rule_id: str, request: Request):
     }
 
 
+@router.post("/rules", summary="Create a new live audit rule")
+async def create_rule(request: Request):
+    """
+    Creates a new YAML rule file in the live rules directory.
+    """
+    try:
+        new_data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    rule_id = new_data.get("id")
+    if not rule_id:
+        raise HTTPException(status_code=400, detail="Rule ID is required to create a new rule.")
+
+    # Validate valid characters in rule ID for filename safety
+    import re
+    if not re.match(r'^[a-zA-Z0-9_\-]+$', rule_id):
+        raise HTTPException(status_code=400, detail="Rule ID can only contain letters, numbers, underscores, and dashes.")
+
+    # Check if a rule with this ID already exists
+    rules = load_rules()
+    if any(r.get("id") == rule_id for r in rules):
+        raise HTTPException(status_code=409, detail=f"A rule with ID '{rule_id}' already exists.")
+
+    # Save to a new YAML file
+    file_path = get_rules_dir() / f"{rule_id}.yaml"
+    
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            yaml.dump(new_data, f, default_flow_style=False, sort_keys=False)
+        logger.info(f"New rule '{rule_id}' created at: {file_path}")
+    except Exception as exc:
+        logger.error(f"Failed to create rule file '{file_path}': {exc}")
+        raise HTTPException(status_code=500, detail=f"Could not create rule file: {exc}")
+
+    return {
+        "status": "created",
+        "rule_id": rule_id,
+        "message": f"Rule '{rule_id}' has been successfully created.",
+    }
+
+
 @router.get("/{rule_id}")
 def run_single_audit(rule_id: str, connection: Connection = Depends(get_connection)):
     """Runs a single YAML audit rule matching the specified rule ID."""
