@@ -429,7 +429,7 @@ function FindingCard({ rule, index }) {
       ) : (
         <p style={{ marginTop: 6, fontSize: '0.83rem', color: '#7a6a55', fontFamily: 'Inter, sans-serif' }}>
           <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>{rule.finding_count}</span>
-          {' '}finding{rule.finding_count !== 1 ? 's' : ''} identified
+          {` finding${rule.finding_count !== 1 ? 's' : ''} identified`}
         </p>
       )}
 
@@ -886,9 +886,9 @@ function RulesView({ results, onDeleteRule, onRuleUpdated }) {
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42', textTransform: 'uppercase' }}>{r.rule_id}</span>
-                <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', fontWeight: 600, color: '#211C16', margin: 0 }}>{r.title}</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42', textTransform: 'uppercase', wordBreak: 'break-all' }}>{r.rule_id}</span>
+                <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', fontWeight: 600, color: '#211C16', margin: 0, wordBreak: 'break-word' }}>{r.title}</h3>
               </div>
               <span className={severityStampClass(r.severity)} style={{ flexShrink: 0 }}>{severityLabel(r.severity)}</span>
             </div>
@@ -992,8 +992,8 @@ function ReportsView({ runId }) {
   }
 
   return (
-    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 800 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+    <div className="reports-view">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, width: '100%', boxSizing: 'border-box' }}>
         <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#DCD3B8' }}>Executive Narrative Report</h1>
         <div style={{ display: 'flex', gap: 12 }}>
           {report && (
@@ -1009,12 +1009,12 @@ function ReportsView({ runId }) {
         </div>
       </div>
       
-      {error && <div style={{ color: '#A23B2C', fontFamily: 'Inter, sans-serif' }}>Error: {error}</div>}
+      {error && <div style={{ color: '#A23B2C', fontFamily: 'Inter, sans-serif', width: '100%', boxSizing: 'border-box' }}>Error: {error}</div>}
       
       {report && (
-        <div id="report-content" style={{ background: '#DCD3B8', padding: '32px', borderRadius: 6, color: '#211C16' }}>
+        <div id="report-content" className="report-card" style={{ width: '100%', boxSizing: 'border-box', minWidth: 0, overflowX: 'hidden' }}>
           {/* Header */}
-          <div style={{ borderBottom: '2px solid #211C16', paddingBottom: 16, marginBottom: 24 }}>
+          <div style={{ borderBottom: '2px solid #211C16', paddingBottom: 16, marginBottom: 24, width: '100%', boxSizing: 'border-box' }}>
             <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '2rem', margin: 0 }}>Audit Case File</h1>
             <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.8rem', color: '#6b5d42', marginTop: 8 }}>
               Case ID: {runId} <br/>
@@ -1025,7 +1025,7 @@ function ReportsView({ runId }) {
 
           {/* Executive Summary */}
           <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.4rem', marginBottom: 12 }}>Executive Summary</h2>
-          <div className="markdown-body" style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 32 }}>
+          <div className="markdown-body" style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 32, width: '100%', boxSizing: 'border-box', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
             {report.narrative 
               ? <div dangerouslySetInnerHTML={{ __html: window.marked ? window.marked.parse(report.narrative) : report.narrative }} />
               : <p>No narrative generated.</p>
@@ -1034,21 +1034,21 @@ function ReportsView({ runId }) {
 
           {/* Active Findings */}
           <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.4rem', marginBottom: 12 }}>Active Findings Detail</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32, width: '100%', boxSizing: 'border-box', minWidth: 0 }}>
             {report.results.filter(r => r.finding_count > 0).length === 0 ? (
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>No anomalies detected in this run.</p>
             ) : (
               report.results.filter(r => r.finding_count > 0).map(rule => (
-                <div key={rule.rule_id} style={{ pageBreakInside: 'avoid', background: 'rgba(255,255,255,0.4)', padding: 16, borderRadius: 4, borderLeft: `4px solid ${rule.severity === 'critical' ? '#A23B2C' : rule.severity === 'high' ? '#D97706' : '#B08F4F'}` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                    <div>
-                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42' }}>{rule.rule_id}</div>
-                      <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', margin: '4px 0', fontWeight: 600 }}>{rule.title}</h3>
+                <div key={rule.rule_id} style={{ pageBreakInside: 'avoid', background: 'rgba(255,255,255,0.4)', padding: 16, borderRadius: 4, borderLeft: `4px solid ${rule.severity === 'critical' ? '#A23B2C' : rule.severity === 'high' ? '#D97706' : '#B08F4F'}`, width: '100%', boxSizing: 'border-box', minWidth: 0, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, gap: 12, width: '100%', boxSizing: 'border-box' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42', wordBreak: 'break-all' }}>{rule.rule_id}</div>
+                      <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', margin: '4px 0', fontWeight: 600, wordBreak: 'break-word' }}>{rule.title}</h3>
                     </div>
-                    <span className={severityStampClass(rule.severity)} style={{ position: 'static' }}>{severityLabel(rule.severity)}</span>
+                    <span className={severityStampClass(rule.severity)} style={{ position: 'static', flexShrink: 0 }}>{severityLabel(rule.severity)}</span>
                   </div>
                   {/* Findings Table */}
-                  <div style={{ overflowX: 'auto' }}>
+                  <div style={{ overflowX: 'auto', width: '100%', boxSizing: 'border-box' }}>
                     <table style={{ width: '100%', fontSize: '0.8rem', fontFamily: 'Inter, sans-serif', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid #c7be9f', textAlign: 'left' }}>
@@ -1075,24 +1075,26 @@ function ReportsView({ runId }) {
 
           {/* Configured Rules Evaluated */}
           <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.4rem', marginBottom: 12 }}>Rules Evaluated</h2>
-          <table style={{ width: '100%', fontSize: '0.85rem', fontFamily: 'Inter, sans-serif', borderCollapse: 'collapse', background: 'rgba(255,255,255,0.4)', borderRadius: 4, overflow: 'hidden' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #c7be9f', textAlign: 'left' }}>
-                <th style={{ padding: '8px 12px' }}>Rule ID</th>
-                <th style={{ padding: '8px 12px' }}>Title</th>
-                <th style={{ padding: '8px 12px' }}>Severity</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.results.map(r => (
-                <tr key={r.rule_id} style={{ borderBottom: '1px solid rgba(199, 190, 159, 0.5)' }}>
-                  <td style={{ padding: '8px 12px', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem' }}>{r.rule_id}</td>
-                  <td style={{ padding: '8px 12px', fontWeight: 500 }}>{r.title}</td>
-                  <td style={{ padding: '8px 12px' }}>{severityLabel(r.severity)}</td>
+          <div style={{ overflowX: 'auto', width: '100%', boxSizing: 'border-box' }}>
+            <table style={{ width: '100%', fontSize: '0.85rem', fontFamily: 'Inter, sans-serif', borderCollapse: 'collapse', background: 'rgba(255,255,255,0.4)', borderRadius: 4, overflow: 'hidden' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #c7be9f', textAlign: 'left' }}>
+                  <th style={{ padding: '8px 12px' }}>Rule ID</th>
+                  <th style={{ padding: '8px 12px' }}>Title</th>
+                  <th style={{ padding: '8px 12px' }}>Severity</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {report.results.map(r => (
+                  <tr key={r.rule_id} style={{ borderBottom: '1px solid rgba(199, 190, 159, 0.5)' }}>
+                    <td style={{ padding: '8px 12px', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', wordBreak: 'break-all' }}>{r.rule_id}</td>
+                    <td style={{ padding: '8px 12px', fontWeight: 500 }}>{r.title}</td>
+                    <td style={{ padding: '8px 12px' }}>{severityLabel(r.severity)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       {!report && !loading && !error && (
@@ -1205,10 +1207,10 @@ function PoliciesView() {
   }
 
   return (
-    <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: '900px', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+    <div className="policies-view">
       <h1 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '1.5rem', color: '#DCD3B8' }}>Policy Document Ingestion</h1>
       
-      <div style={{ background: '#DCD3B8', padding: '24px', borderRadius: 6, width: '100%', boxSizing: 'border-box' }}>
+      <div className="policies-card">
         <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', fontWeight: 600, color: '#211C16', marginBottom: 12 }}>Upload PDF Policy</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <input type="file" accept=".pdf" onChange={handleFileChange} style={{ fontFamily: 'Inter, sans-serif', color: '#211C16', maxWidth: '100%' }} />
@@ -1240,18 +1242,18 @@ function PoliciesView() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', boxSizing: 'border-box' }}>
             {drafts.map(draft => (
               <div key={draft.id} style={{ background: '#DCD3B8', padding: 16, borderRadius: 6, color: '#211C16', width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
+                <div className="draft-card-header">
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.75rem', color: '#6b5d42', wordBreak: 'break-all' }}>{draft.id}</div>
                     <h3 style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.1rem', margin: '4px 0', fontWeight: 600, wordBreak: 'break-word' }}>{draft.title}</h3>
                   </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button onClick={() => setEditingRule(draft)} style={{ padding: '6px 12px', background: '#B08F4F', color: '#211C16', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600 }}>Edit</button>
-                    <button onClick={() => handleReject(draft.id)} style={{ padding: '6px 12px', background: '#A23B2C', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600 }}>Deny</button>
-                    <button onClick={() => handleApprove(draft.id)} style={{ padding: '6px 12px', background: '#2e6b2f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600 }}>Approve</button>
+                  <div className="draft-card-buttons">
+                    <button onClick={() => setEditingRule(draft)} style={{ background: '#B08F4F', color: '#211C16' }}>Edit</button>
+                    <button onClick={() => handleReject(draft.id)} style={{ background: '#A23B2C', color: '#fff' }}>Deny</button>
+                    <button onClick={() => handleApprove(draft.id)} style={{ background: '#2e6b2f', color: '#fff' }}>Approve</button>
                   </div>
                 </div>
-                <pre style={{ background: 'rgba(0,0,0,0.05)', padding: 12, borderRadius: 4, fontSize: '0.8rem', margin: 0, border: '1px solid #c7be9f', width: '100%', boxSizing: 'border-box', overflowX: 'auto', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+                <pre className="draft-json-preview">
                   {JSON.stringify(draft, null, 2)}
                 </pre>
               </div>
