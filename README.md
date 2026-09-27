@@ -1,6 +1,21 @@
 # Internal Audit App
 
-Internal Audit App is a full-stack auditing platform for running rule-based internal compliance checks, generating audit reports, and supporting policy analysis workflows.
+Internal Audit App is a full-stack auditing platform that automates core parts of the internal audit workflow.
+
+## What this project is
+
+This project helps audit teams go from policy to executable checks faster by:
+
+- Understanding audit policy context and database structure
+- Drafting SQL queries for audit checks
+- Requiring human approval from the audit team before execution
+- Supporting periodic re-runs of approved checks
+- Adding policy documents to a vector database so the LLM can retrieve policy context while generating queries
+- Supporting Ollama for local LLM usage when data privacy is required
+
+## Why this project exists
+
+Audit teams often spend significant time manually translating policy requirements into reliable SQL checks. This project reduces that workload by automating query drafting while keeping auditors in control through an approval step. It improves speed and repeatability of recurring audits while preserving privacy options through local LLM support.
 
 ## Repository Structure
 
